@@ -1,0 +1,54 @@
+name: dronees
+description: "A new Flutter project."
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ^3.10.0-290.1.beta
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.6.0
+  get: ^4.7.3
+  get_storage: ^2.1.1
+  flutter_native_splash: ^2.4.7
+  flutter_screenutil: ^5.9.3
+  logger: ^2.6.2
+  url_launcher: ^6.3.2
+  intl: ^0.20.2
+  connectivity_plus: ^7.0.0
+  smooth_page_indicator: ^2.0.1
+  animated_custom_dropdown: ^3.1.1
+  permission_handler: ^12.0.1
+  image_picker: ^1.2.1
+  skeletonizer: ^2.1.2
+  cupertino_icons: ^1.0.8
+  ephone_field: ^0.0.2
+  slide_to_act: ^2.0.2
+  iconsax_flutter: ^1.0.1
+  flutter_svg: ^2.2.3
+  geolocator: ^14.0.2
+  flutter_map: ^8.2.2
+  latlong2: ^0.9.1
+  latlong_to_place: ^0.0.7
+  google_maps_flutter: ^2.14.0
+  camera: ^0.11.3
+  path_provider: ^2.1.5
+  image: ^4.7.2
+  dotted_border: ^3.1.0
+  flutter_staggered_grid_view: ^0.7.0
+  table_calendar: ^3.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/images/onboard/
+    - assets/icons/
