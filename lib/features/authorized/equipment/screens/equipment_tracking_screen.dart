@@ -1,5 +1,7 @@
 import 'package:dotted_border/dotted_border.dart';
 import 'package:dronees/utils/validators/validation.dart';
+import 'package:dronees/widgets/custom_blur_bottom_sheet.dart';
+import 'package:dronees/widgets/custom_file_picker.dart';
 import 'package:dronees/widgets/upload_document.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -403,20 +405,17 @@ class EquipmentScreen extends StatelessWidget {
   void _showReturnBottomSheet(BuildContext context, Equipment equipment) {
     final controller = Get.find<EquipmentController>();
 
-    controller.returnImage.value = null;
-    controller.returnRemarkController.clear();
-
-    Get.bottomSheet(
-      isScrollControlled: true,
-      Container(
-        padding: const EdgeInsets.all(TSizes.defaultPadding),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SingleChildScrollView(
-          child: Form(
-            key: controller.returnFormKey,
+    return CustomBlurBottomSheet.show(
+      context,
+      onClosed: () {
+        controller.returnImage.value = null;
+        controller.returnRemarkController.clear();
+      },
+      widget: SingleChildScrollView(
+        child: Form(
+          key: controller.returnFormKey,
+          child: Padding(
+            padding: const EdgeInsets.all(TSizes.defaultPadding),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,7 +429,7 @@ class EquipmentScreen extends StatelessWidget {
                       bottom: TSizes.defaultPadding,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: Colors.grey,
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -482,63 +481,15 @@ class EquipmentScreen extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 12),
-                FormField<File>(
-                  initialValue: controller.returnImage.value,
+                CustomFilePicker(
+                  title: "Equipment Return Photo",
+                  subTitle: "Take a photo of the equipment condition now",
+                  onPick: controller.pickReturnImage,
+                  initialValue: controller.selectedImage.value,
                   validator: (value) =>
                       TValidator.validateNull(value, "Please Provide a Image"),
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  builder: (FormFieldState<File> field) {
-                    return DottedBorder(
-                      options: RoundedRectDottedBorderOptions(
-                        dashPattern: [7, 5],
-                        strokeWidth: 1,
-                        radius: Radius.circular(16),
-                        color: field.hasError
-                            ? TColors.error
-                            : TColors.primary.withAlpha(200),
-                      ),
-                      child: GestureDetector(
-                        onTap: () => controller.pickReturnImage(field),
-                        child: field.value == null
-                            ? UploadDocument(
-                                title: "Equipment Return Photo",
-                                subTitle:
-                                    "Take a photo of the equipment condition now",
-                                field: field,
-                              )
-                            : ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: Stack(
-                                  children: [
-                                    Image.file(
-                                      field.value!,
-                                      width: double.infinity,
-                                      height: 200,
-                                      fit: BoxFit.cover,
-                                    ),
-                                    Positioned(
-                                      right: 10,
-                                      top: 10,
-                                      child: CircleAvatar(
-                                        backgroundColor: Colors.black54,
-                                        child: IconButton(
-                                          icon: const Icon(
-                                            Icons.refresh,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          onPressed: () =>
-                                              controller.pickReturnImage(field),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                      ),
-                    );
-                  },
                 ),
+
                 const SizedBox(height: 30),
 
                 // Submit Button

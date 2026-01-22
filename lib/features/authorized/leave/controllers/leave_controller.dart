@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dronees/features/authorized/leave/models/leave_duration.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,12 +11,10 @@ class LeaveController extends GetxController {
   final int usedLeave = 2;
   Rxn<String> selectedValue = Rxn<String>(null);
   GlobalKey<FormState> leaveFormKey = GlobalKey<FormState>();
-  Rx<TextEditingController> emergencyContactController =
-      Rx<TextEditingController>(TextEditingController());
-  Rx<TextEditingController> purposeController = Rx<TextEditingController>(
-    TextEditingController(),
-  );
+  // TextEditingController emergencyContactController = TextEditingController();
+  TextEditingController purposeController = TextEditingController();
   // final selectedDate = DateTime.now().obs;
+  var emergencyContact = ''.obs;
 
   Rx<LeaveType> selectedLeaveType = LeaveType.fullDay.obs;
   Rx<DateTime> startDate = DateTime.now().obs;
@@ -36,7 +36,7 @@ class LeaveController extends GetxController {
 
   @override
   void onClose() {
-    // Dispose controllers if any
+    purposeController.dispose();
     super.onClose();
   }
 
@@ -164,9 +164,21 @@ class LeaveController extends GetxController {
     print("Total Days: ${leaveDuration.getTotalDays()}");
     print("Leave Data: ${leaveDuration.toJson()}");
 
-    // Add your API call here
-    // Example:
-    // await leaveRepository.submitLeave(leaveDuration.toJson());
+    final data = {
+      "type": selectedValue.value,
+      "startDate": startDate.value.toString(),
+      "endDate": endDate.value.toString(),
+      "emergencyContact": emergencyContact.value,
+      "purpose": purposeController.text,
+      "submitDate": DateTime.now().toString(),
+      "range": leaveDuration.getDescription(),
+      "totalDays": leaveDuration.getTotalDays(),
+      "status": "Pending",
+      "reviewedDate": "",
+      "reviewer": "",
+    };
+
+    log(data.toString());
 
     Get.snackbar(
       "Success",

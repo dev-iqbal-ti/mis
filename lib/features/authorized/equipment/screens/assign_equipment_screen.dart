@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dronees/features/authorized/equipment/models/equipment.dart';
 import 'package:dronees/utils/constants/text_strings.dart';
 import 'package:dronees/utils/validators/validation.dart';
+import 'package:dronees/widgets/custom_file_picker.dart';
 import 'package:dronees/widgets/submit_confirmation.dart';
 import 'package:dronees/widgets/upload_document.dart';
 import 'package:flutter/material.dart';
@@ -224,63 +225,14 @@ class AssignEquipmentScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
 
-                          FormField<File>(
+                          CustomFilePicker(
+                            title: "Upload Photo",
+                            onPick: controller.pickImage,
                             initialValue: controller.selectedImage.value,
                             validator: (value) => TValidator.validateNull(
                               value,
                               "Select a Image",
                             ),
-                            autovalidateMode:
-                                AutovalidateMode.onUserInteraction,
-                            builder: (FormFieldState<File> field) {
-                              log(field.value?.path ?? "");
-                              return GestureDetector(
-                                onTap: () => controller.pickImage(field),
-                                child: DottedBorder(
-                                  options: RoundedRectDottedBorderOptions(
-                                    dashPattern: [7, 5],
-                                    strokeWidth: 1,
-                                    radius: Radius.circular(16),
-                                    color: field.hasError
-                                        ? TColors.error
-                                        : TColors.primary.withAlpha(200),
-                                  ),
-                                  child: field.value == null
-                                      ? Column(
-                                          children: [
-                                            UploadDocument(
-                                              title: "Upload Equipment Photo",
-                                              field: field,
-                                            ),
-                                          ],
-                                        )
-                                      : ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            16.0,
-                                          ),
-                                          child: Stack(
-                                            children: [
-                                              Image.file(
-                                                width: double.infinity,
-                                                fit: BoxFit.cover,
-                                                field.value!,
-                                                height: 220,
-                                              ),
-                                              Positioned(
-                                                right: 10,
-                                                top: 10,
-                                                child: const Icon(
-                                                  Iconsax.refresh_circle,
-                                                  color: TColors.white,
-                                                  size: 30,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                ),
-                              );
-                            },
                           ),
                         ],
                       ),

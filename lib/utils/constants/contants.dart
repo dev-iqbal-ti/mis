@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:dronees/features/authorized/equipment/screens/equipment_tracking_screen.dart';
+import 'package:dronees/features/authorized/field_task/screens/field_task_screen.dart';
 import 'package:dronees/features/authorized/leave/screens/leave_summary_screen.dart';
 import 'package:dronees/features/authorized/money_receive/screens/money_receive_screen.dart';
 import 'package:dronees/models/quick_action.dart';
@@ -48,6 +49,6 @@ final List<QuickAction> homeScreenQuickActions = [
     title: 'Field Task',
     subtitle: 'Client compliance',
     color: const Color(0xFF2ECC71),
-    onTap: () => Get.to(() => LeaveSummaryScreen()),
+    onTap: () => Get.to(() => FieldTaskScreen()),
   ),
 ];

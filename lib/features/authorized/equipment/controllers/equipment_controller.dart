@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:dronees/features/authorized/equipment/models/equipment.dart';
@@ -49,7 +50,7 @@ class EquipmentController extends GetxController {
 
   Future<void> pickImage(FormFieldState<File> field) async {
     final file = await ImageUploadService.pickImageFromSource(
-      ImageSource.camera,
+      ImageSource.gallery,
     );
 
     if (file != null) {
@@ -71,6 +72,7 @@ class EquipmentController extends GetxController {
 
   void finalizeReturn(Equipment equipment) {
     if (returnFormKey.currentState?.validate() ?? false) {
+      log(returnImage.value.toString());
       if (returnImage.value == null) {
         Get.snackbar(
           "Photo Required",

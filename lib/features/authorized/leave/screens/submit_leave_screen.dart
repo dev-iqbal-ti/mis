@@ -15,14 +15,15 @@ import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 class SubmitLeaveScreen extends StatelessWidget {
-  const SubmitLeaveScreen({super.key});
+  SubmitLeaveScreen({super.key});
+
+  final LeaveController controller = Get.find<LeaveController>();
+
+  // Put calendar controller with permanent flag to prevent disposal
+  final calendarController = Get.put(LeaveCalendarController());
 
   @override
   Widget build(BuildContext context) {
-    // Find existing controller
-    final LeaveController controller = Get.find<LeaveController>();
-    final calendarController = Get.put(LeaveCalendarController());
-
     return Scaffold(
       backgroundColor: TColors.lightGrayBackground,
       appBar: AppBar(
@@ -144,33 +145,12 @@ class SubmitLeaveScreen extends StatelessWidget {
 
                 const SizedBox(height: TSizes.defaultPadding),
 
-                // _buildFieldLabel("Task Delegation"),
-                // const SizedBox(height: 6),
-                // TextFormField(
-                //   // controller: controller.amountController,
-                //   keyboardType: TextInputType.number,
-                //   decoration: InputDecoration(
-                //     hintText: "Employee Name",
-                //     prefixIcon: Icon(Iconsax.user),
-                //     iconColor: TColors.primary,
-                //     prefixIconColor: TColors.primary,
-                //     filled: true,
-                //     fillColor: const Color(0xFFF8F9FA),
-                //     border: OutlineInputBorder(
-                //       borderRadius: BorderRadius.circular(12),
-                //       borderSide: BorderSide.none,
-                //     ),
-                //     enabledBorder: OutlineInputBorder(
-                //       borderRadius: BorderRadius.circular(12),
-                //       borderSide: BorderSide(color: const Color(0xFFE8E8E8)),
-                //     ),
-                //   ),
-                // ),
-                // const SizedBox(height: TSizes.defaultPadding),
                 _buildFieldLabel("Emergency Contact During Leave Period"),
                 const SizedBox(height: 8),
                 EPhoneField(
-                  controller: controller.emergencyContactController.value,
+                  onChanged: (phone) {
+                    controller.emergencyContact.value = phone;
+                  },
                   phoneValidator: TValidator.validatePhoneNumber,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   initialType: EphoneFieldType.phone,
@@ -198,7 +178,7 @@ class SubmitLeaveScreen extends StatelessWidget {
                 _buildFieldLabel("Leave Purpose"),
                 const SizedBox(height: 6),
                 TextFormField(
-                  controller: controller.purposeController.value,
+                  controller: controller.purposeController,
                   validator: TValidator.leavePurposeValidator,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   minLines: 5, // initial height

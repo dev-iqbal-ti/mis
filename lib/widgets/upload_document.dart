@@ -1,54 +1,3 @@
-// import 'package:dronees/utils/constants/sizes.dart';
-// import 'package:flutter/material.dart';
-// import 'package:iconsax_flutter/iconsax_flutter.dart';
-
-// class UploadDocument extends StatelessWidget {
-//   const UploadDocument({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       width: double.infinity,
-//       padding: const EdgeInsets.all(TSizes.defaultPadding),
-//       decoration: BoxDecoration(
-//         color: const Color(0xFFF8F7FF),
-//         borderRadius: BorderRadius.circular(16),
-//       ),
-//       child: Column(
-//         children: [
-//           Container(
-//             padding: const EdgeInsets.all(12),
-//             decoration: BoxDecoration(
-//               color: const Color(0xFFEDE7FF),
-//               shape: BoxShape.circle,
-//             ),
-//             child: const Icon(
-//               Iconsax.paperclip_2_copy,
-//               color: Color(0xFF6C5CE7),
-//               size: 32,
-//             ),
-//           ),
-//           const SizedBox(height: TSizes.minSpaceBtw),
-//           const Text(
-//             'Upload Claim Document',
-//             style: TextStyle(
-//               fontSize: 16,
-//               fontWeight: FontWeight.w600,
-//               color: Color(0xFF6C5CE7),
-//             ),
-//           ),
-//           const SizedBox(height: 4),
-//           const Text(
-//             'Format should be in .jpeg .png less than 5MB',
-//             style: TextStyle(fontSize: 12, color: Colors.grey),
-//             textAlign: TextAlign.center,
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 import 'package:dronees/utils/constants/colors.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:flutter/material.dart';
@@ -65,7 +14,7 @@ class UploadDocument extends StatelessWidget {
 
   final String? errorText;
   final String title;
-  final String subTitle;
+  final String? subTitle;
   final FormFieldState? field;
 
   @override
@@ -115,7 +64,7 @@ class UploadDocument extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                subTitle,
+                subTitle ?? 'Format should be in .jpeg .png less than 5MB',
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),

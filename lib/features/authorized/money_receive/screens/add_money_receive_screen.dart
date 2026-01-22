@@ -1,8 +1,11 @@
 import 'dart:io';
 
 import 'package:dronees/features/authorized/money_receive/controllers/money_receive_controller.dart';
+import 'package:dronees/utils/constants/sizes.dart';
 import 'package:dronees/utils/helpers/image_picker_helper.dart';
+import 'package:dronees/utils/validators/validation.dart';
 import 'package:dronees/widgets/custom_bottom_sheet_dropdown.dart';
+import 'package:dronees/widgets/custom_file_picker.dart';
 import 'package:dronees/widgets/upload_document.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -34,13 +37,13 @@ class AddMoneyReceiveScreen extends StatelessWidget {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(TSizes.defaultPadding),
               child: Form(
                 key: controller.paymentFormKey,
                 child: Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(TSizes.defaultPadding),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
@@ -49,45 +52,64 @@ class AddMoneyReceiveScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Project Dropdown
-                          Obx(
-                            () => CustomBottomSheetDropdown(
-                              label: "Select Project",
-                              items: const [
-                                "Skyline Residency",
-                                "Metro Bridge",
-                                "Global Tech Hub",
-                              ],
-                              selectedValue: controller.selectedProject,
-                              errorText: controller.showProjectError.value
-                                  ? "Please select a project"
-                                  : null,
-                              onSelect: (val) =>
-                                  controller.selectedProject.value = val,
-                              icon: Iconsax.folder,
-                            ),
+                          const Text(
+                            "Client Project",
+                            style: TextStyle(fontWeight: FontWeight.w600),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 6),
+                          CustomBottomSheetDropdown(
+                            validator: (value) => TValidator.validateNull(
+                              value,
+                              "Project is required.",
+                            ),
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+
+                            label: "Select Project",
+                            items: const [
+                              "Skyline Residency",
+                              "Metro Bridge",
+                              "Global Tech Hub",
+                            ],
+                            selectedValue: controller.selectedProject,
+                            onSelect: (val) =>
+                                controller.selectedProject.value = val,
+                            icon: Iconsax.folder,
+                          ),
+                          const SizedBox(height: TSizes.spaceBtwItems),
 
                           // Amount
                           const Text(
                             "Received Amount",
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           TextFormField(
                             controller: controller.amountController,
                             keyboardType: TextInputType.number,
-                            validator: (v) =>
-                                v!.isEmpty ? "Enter amount" : null,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            validator: TValidator.validateAmount,
                             decoration: _buildInputDecoration(
                               hint: "0.00",
                               icon: Icons.currency_rupee,
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: TSizes.spaceBtwItems),
 
-                          // Payment Mode Dropdown
+                          const Text(
+                            "Payment Mode",
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 6),
                           CustomBottomSheetDropdown(
+                            validator: (value) => TValidator.validateNull(
+                              value,
+                              "Payment mode is required.",
+                            ),
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+
                             label: "Payment Mode",
                             items: const [
                               "UPI / QR",
@@ -101,49 +123,40 @@ class AddMoneyReceiveScreen extends StatelessWidget {
                             icon: Iconsax.card,
                           ),
 
-                          const SizedBox(height: 20),
+                          const SizedBox(height: TSizes.spaceBtwItems),
 
                           // Remark
                           const Text(
                             "Payment Remark",
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           TextFormField(
                             controller: controller.remarkController,
-                            maxLines: 2,
+                            validator: (value) =>
+                                TValidator.emptyValidator(value, "Remark"),
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            maxLines: 3,
                             decoration: _buildInputDecoration(
                               hint: "E.g. Part payment for Phase 1",
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: TSizes.spaceBtwItems),
 
                           // Custom Image Upload
                           const Text(
                             "Payment Proof (Screenshot/Receipt)",
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
-                          const SizedBox(height: 12),
-                          GestureDetector(
-                            onTap: () async {
-                              final image =
-                                  await ImageUploadService.pickImageFromSource(
-                                    ImageSource.gallery,
-                                  );
-                              if (image != null) {
-                                controller.selectedImage.value = image;
-                              }
-                            },
-                            child: Obx(
-                              () => controller.selectedImage.value == null
-                                  ? UploadDocument(
-                                      errorText: controller.showImageError.value
-                                          ? "Please upload proof"
-                                          : null,
-                                    )
-                                  : _buildImagePreview(
-                                      controller.selectedImage.value!,
-                                    ),
+                          const SizedBox(height: 6),
+                          CustomFilePicker(
+                            title: "Upload Photo",
+                            onPick: controller.pickImage,
+                            initialValue: controller.selectedImage.value,
+                            validator: (value) => TValidator.validateNull(
+                              value,
+                              "Select a Image",
                             ),
                           ),
                         ],

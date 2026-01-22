@@ -30,7 +30,7 @@ class TravelAllowanceController extends GetxController {
     );
   }
 
-  Future<void> pickDocument() async {
+  Future<void> pickDocument(FormFieldState<File> field) async {
     final source = await Get.bottomSheet<ImageSource>(
       Container(
         padding: const EdgeInsets.all(20),
@@ -61,6 +61,7 @@ class TravelAllowanceController extends GetxController {
 
     if (file != null) {
       selectedFile.value = file;
+      field.didChange(file);
     }
   }
 

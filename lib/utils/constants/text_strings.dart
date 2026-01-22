@@ -27,6 +27,9 @@ class TTexts {
   static const String confirmAssignment = "Confirm Assignment";
   static const String doubleCheckEquipment =
       "Double-check your equipment details to ensure everything is correct. Do you want to proceed?";
+  static const String confirmTask = "Confirm Client Task Completion";
+  static const String doubleCheckTask =
+      "Double-check your task report details to ensure everything is correct. Do you want to proceed?";
 
   //   // -- Welcome Screen --
   //   static const String welcomeTxt1 = "Editora: elevating properties,";

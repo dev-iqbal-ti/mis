@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:dronees/features/authorized/attendance/widgets/build_date_picker.dart';
 import 'package:dronees/features/authorized/travel_allowance/controllers/travel_allowance_controller.dart';
+import 'package:dronees/utils/validators/validation.dart';
+import 'package:dronees/widgets/custom_file_picker.dart';
 import 'package:dronees/widgets/submit_confirmation.dart';
 
 import 'package:dronees/utils/constants/colors.dart';
@@ -95,48 +97,15 @@ class SubmitTravelAllowance extends StatelessWidget {
                             style: TextStyle(fontSize: 13, color: Colors.grey),
                           ),
                           const SizedBox(height: TSizes.spaceBtwItems),
-
-                          // Upload Document Section
-                          GestureDetector(
-                            onTap: controller.pickDocument,
-
-                            child: DottedBorder(
-                              options: RoundedRectDottedBorderOptions(
-                                dashPattern: [7, 5],
-                                strokeWidth: 1,
-                                radius: Radius.circular(16),
-                                color: TColors.primary.withAlpha(200),
-                              ),
-                              child: Obx(() {
-                                return controller.selectedFile.value == null
-                                    ? UploadDocument(
-                                        title: "Upload Claim Document",
-                                      )
-                                    : ClipRRect(
-                                        borderRadius: BorderRadius.circular(
-                                          16.0,
-                                        ),
-                                        child: Stack(
-                                          children: [
-                                            Image.file(
-                                              width: double.infinity,
-                                              fit: BoxFit.cover,
-                                              controller.selectedFile.value!,
-                                              height: 220,
-                                            ),
-                                            Positioned(
-                                              right: 10,
-                                              top: 10,
-                                              child: const Icon(
-                                                Iconsax.refresh_circle,
-                                                color: TColors.white,
-                                                size: 30,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                              }),
+                          CustomFilePicker(
+                            title: "Upload Claim Document",
+                            subTitle:
+                                "Take a photo of the equipment condition now",
+                            onPick: controller.pickDocument,
+                            initialValue: controller.selectedFile.value,
+                            validator: (value) => TValidator.validateNull(
+                              value,
+                              "Please Provide a Image",
                             ),
                           ),
 

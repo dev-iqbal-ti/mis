@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:dronees/features/authorized/money_receive/models/money_record.dart';
+import 'package:dronees/utils/helpers/image_picker_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 
 class MoneyReceiveController extends GetxController {
   final paymentFormKey = GlobalKey<FormState>();
@@ -58,5 +60,15 @@ class MoneyReceiveController extends GetxController {
     selectedImage.value = null;
     amountController.clear();
     remarkController.clear();
+  }
+
+  Future<void> pickImage(FormFieldState<File> field) async {
+    final image = await ImageUploadService.pickImageFromSource(
+      ImageSource.gallery,
+    );
+    if (image != null) {
+      selectedImage.value = image;
+      field.didChange(image);
+    }
   }
 }

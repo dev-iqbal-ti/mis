@@ -42,6 +42,29 @@ class TValidator {
     return null;
   }
 
+  static String? validateTeamMember(value) {
+    // log(
+    //   "TValodator file line number ${value.toString()}",
+    //   stackTrace: StackTrace.current,
+    // );
+    if (value == null || value.isEmpty) {
+      return "Select at least one team member";
+    }
+    return null;
+  }
+
+  static String? validateAmount(value) {
+    if (value == null || value.isEmpty) {
+      return "Please enter amount";
+    }
+    // ^(?:\d+|\d*\.\d+)$
+    final exp = RegExp(r'^(?:\d+|\d*\.\d+)$');
+    if (exp.hasMatch(value)) {
+      return null;
+    }
+    return "Invalid amount";
+  }
+
   static String? validateNull(dynamic value, String message) {
     if (value == null) {
       return message;
@@ -185,7 +208,7 @@ class TValidator {
 
   static String? emptyValidator(String? value, String fieldName) {
     if (value == null || value.isEmpty) {
-      return 'Please enter $fieldName';
+      return '$fieldName is required.';
     }
     if (value.length < 3) {
       return '$fieldName must be at least 3 characters';
