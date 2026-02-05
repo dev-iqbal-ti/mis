@@ -1,13 +1,21 @@
+import 'dart:convert';
+import 'dart:developer';
+
+import 'package:dronees/bottom_navigator.dart';
+import 'package:dronees/controllers/auth_controller.dart';
+import 'package:dronees/utils/http/api.dart';
+import 'package:dronees/utils/http/http_client.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class LoginController extends GetxController {
+  static LoginController get instance => Get.find();
   final formKey = GlobalKey<FormState>();
 
-  // Text controllers
-  final usernameController = TextEditingController();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  final emailController = TextEditingController(text: "jesmibano@gmail.com");
+  final passwordController = TextEditingController(text: "Pass@123");
+  RxBool obscure = RxBool(true);
+  RxBool remember = RxBool(true);
 
   // Role selection
   var selectedRole = 'pilot'.obs;
@@ -17,7 +25,7 @@ class LoginController extends GetxController {
   var isLoading = false.obs;
 
   // Sign-up logic
-  Future<void> signUp() async {
+  Future<void> login() async {
     final form = formKey.currentState;
 
     if (form == null || !form.validate()) {
@@ -28,22 +36,20 @@ class LoginController extends GetxController {
     isLoading.value = true;
 
     try {
-      final user = (
-        userName: usernameController.text.trim(),
-        emailOrPhone: emailController.text.trim(),
-        password: passwordController.text.trim(),
-        role: selectedRole.value,
-      );
+      final user = {
+        "username": emailController.text.trim(),
+        "password": passwordController.text.trim(),
+        "platform": "mobile",
+      };
 
-      await Future.delayed(const Duration(seconds: 1)); // mock async call
+      log(user.toString());
+      // await Future.delayed(const Duration(seconds: 2));
+      final response = await THttpHelper.postRequest(API.postApis.login, user);
 
-      Get.snackbar(
-        'Success',
-        'Signup successful for ${user.userName}!',
-        snackPosition: SnackPosition.TOP,
-      );
+      if (response == null) return;
 
-      // Get.offAllNamed(AppRoutes.HOME);
+      await AuthController.instance.setAuthUser(response);
+      Get.offAll(() => BottomNavigator());
     } catch (e) {
       Get.snackbar('Error', 'Error: $e', snackPosition: SnackPosition.BOTTOM);
     } finally {
@@ -58,7 +64,6 @@ class LoginController extends GetxController {
 
   @override
   void onClose() {
-    usernameController.dispose();
     emailController.dispose();
     passwordController.dispose();
     super.onClose();

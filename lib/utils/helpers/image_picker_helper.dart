@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:dronees/utils/logging/logger.dart';
@@ -60,7 +61,7 @@ class ImageUploadService {
   static Future<Object?> takePhoto({xFile = false}) async {
     try {
       final XFile? photo = await ImagePicker().pickImage(
-        source: ImageSource.camera,
+        source: ImageSource.gallery,
         imageQuality: 80,
         maxWidth: 1200,
         maxHeight: 1200,
@@ -70,6 +71,7 @@ class ImageUploadService {
         if (xFile) {
           return photo;
         }
+        log(photo.path);
         File file = File(photo.path);
         return file.lengthSync() <= MAX_FILE_SIZE ? file : null;
       }

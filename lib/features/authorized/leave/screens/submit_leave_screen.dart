@@ -3,6 +3,7 @@ import 'package:dronees/features/authorized/leave/controllers/leave_controller.d
 import 'package:dronees/features/authorized/leave/widgets/custon_leave_calender.dart';
 
 import 'package:dronees/utils/constants/colors.dart';
+import 'package:dronees/utils/constants/image_strings.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:dronees/utils/constants/text_strings.dart';
 import 'package:dronees/utils/validators/validation.dart';
@@ -48,160 +49,178 @@ class SubmitLeaveScreen extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(TSizes.defaultPadding),
-        child: Container(
-          padding: const EdgeInsets.all(TSizes.defaultPadding),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Form(
-            key: controller.leaveFormKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Fill Leave Information",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  "Information about leave details",
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: TSizes.defaultPadding),
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Image.asset(TImages.leaveBanner),
+            ),
+            SizedBox(height: TSizes.spaceBtwItems),
+            Container(
+              padding: const EdgeInsets.all(TSizes.defaultPadding),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: Form(
+                key: controller.leaveFormKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Fill Leave Information",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Text(
+                      "Information about leave details",
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    const SizedBox(height: TSizes.defaultPadding),
 
-                _buildFieldLabel("Leave Category"),
-                const SizedBox(height: 6),
-                CustomBottomSheetDropdown(
-                  label: "Choose a Leave Category",
-                  items: const [
-                    "Casual Leave",
-                    "Comp Off",
-                    "Earned Leave",
-                    "Floating Holiday",
-                    "LWP",
-                    "WFH",
-                  ],
-                  icon: Iconsax.keyboard_open,
-                  selectedValue: controller.selectedValue,
-                  onSelect: (value) {
-                    controller.updateValue(value);
-                    print("Selected: $value");
-                  },
-                  validator: TValidator.leaveCategoryValidator,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                ),
-                const SizedBox(height: TSizes.defaultPadding),
+                    _buildFieldLabel("Leave Category"),
+                    const SizedBox(height: 6),
+                    CustomBottomSheetDropdown(
+                      label: "Choose a Leave Category",
+                      items: const [
+                        "Casual Leave",
+                        "Comp Off",
+                        "Earned Leave",
+                        "Floating Holiday",
+                        "LWP",
+                        "WFH",
+                      ],
+                      icon: Iconsax.keyboard_open,
+                      selectedValue: controller.selectedValue,
+                      onSelect: (value) {
+                        controller.updateValue(value);
+                        print("Selected: $value");
+                      },
+                      validator: TValidator.leaveCategoryValidator,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                    ),
+                    const SizedBox(height: TSizes.defaultPadding),
 
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
-                            Icons.calendar_month,
-                            color: Color(0xFF6A5AE0),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            "Select Leave Dates",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const Spacer(),
-                          // Tap day to select
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF6A5AE0).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'Tap days to select',
-                              style: TextStyle(
-                                fontSize: 10,
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.calendar_month,
                                 color: Color(0xFF6A5AE0),
-                                fontWeight: FontWeight.w600,
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                "Select Leave Dates",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const Spacer(),
+                              // Tap day to select
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF6A5AE0,
+                                  ).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text(
+                                  'Tap days to select',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFF6A5AE0),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
+                          const SizedBox(height: 8),
+                          CustomLeaveCalendar(controller: calendarController),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      CustomLeaveCalendar(controller: calendarController),
-                    ],
-                  ),
+                    ),
+
+                    const SizedBox(height: TSizes.defaultPadding),
+
+                    _buildFieldLabel("Emergency Contact During Leave Period"),
+                    const SizedBox(height: 8),
+                    EPhoneField(
+                      onChanged: (phone) {
+                        controller.emergencyContact.value = phone;
+                      },
+                      phoneValidator: TValidator.validatePhoneNumber,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      initialType: EphoneFieldType.phone,
+                      initialCountry: Country.india,
+                      countries: [Country.india],
+                      decoration: InputDecoration(
+                        hintText: "Employee",
+                        prefixIcon: Icon(Iconsax.user),
+                        iconColor: TColors.primary,
+                        prefixIconColor: TColors.primary,
+                        filled: true,
+                        fillColor: const Color(0xFFF8F9FA),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: const Color(0xFFE8E8E8),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: TSizes.defaultPadding),
+
+                    _buildFieldLabel("Leave Purpose"),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: controller.purposeController,
+                      validator: TValidator.leavePurposeValidator,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      minLines: 5, // initial height
+                      maxLines: 6,
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.all(8),
+                        hintText: "Purpose",
+
+                        filled: true,
+                        fillColor: const Color(0xFFF8F9FA),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: const Color(0xFFE8E8E8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-
-                const SizedBox(height: TSizes.defaultPadding),
-
-                _buildFieldLabel("Emergency Contact During Leave Period"),
-                const SizedBox(height: 8),
-                EPhoneField(
-                  onChanged: (phone) {
-                    controller.emergencyContact.value = phone;
-                  },
-                  phoneValidator: TValidator.validatePhoneNumber,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  initialType: EphoneFieldType.phone,
-                  initialCountry: Country.india,
-                  countries: [Country.india],
-                  decoration: InputDecoration(
-                    hintText: "Employee",
-                    prefixIcon: Icon(Iconsax.user),
-                    iconColor: TColors.primary,
-                    prefixIconColor: TColors.primary,
-                    filled: true,
-                    fillColor: const Color(0xFFF8F9FA),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: const Color(0xFFE8E8E8)),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: TSizes.defaultPadding),
-
-                _buildFieldLabel("Leave Purpose"),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: controller.purposeController,
-                  validator: TValidator.leavePurposeValidator,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  minLines: 5, // initial height
-                  maxLines: 6,
-                  decoration: InputDecoration(
-                    contentPadding: EdgeInsets.all(8),
-                    hintText: "Purpose",
-
-                    filled: true,
-                    fillColor: const Color(0xFFF8F9FA),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: const Color(0xFFE8E8E8)),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
       bottomNavigationBar: _buildSubmitButton(context, controller),

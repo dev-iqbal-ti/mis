@@ -1,6 +1,7 @@
 import 'package:dronees/bindings/general_binding.dart';
 import 'package:dronees/bottom_navigator.dart';
 import 'package:dronees/data/repositories/auth_repository.dart';
+import 'package:dronees/features/unauthorized/screens/onboarding_screen.dart';
 // import 'package:dronees/features/authorized/attendance/screens/attendance_mark_screen.dart';
 // import 'package:dronees/features/authorized/attendance/screens/attendance_screen.dart';
 // import 'package:dronees/features/authorized/travel_allowance/screens/submit_travel_allowance.dart';
@@ -61,24 +62,11 @@ class MyApp extends StatelessWidget {
 
         debugShowCheckedModeBanner: false,
         initialBinding: GeneralBindings(),
-        // getPages: AppPages.pages,
-        // home: Scaffold(
-        //   backgroundColor: TColors.primary,
-        //   // body: Center(child: CircularProgressIndicator(color: Colors.white)),
-        //   body: Center(
-        //     child: Padding(
-        //       padding: EdgeInsets.all(8.0),
-        //       // child: EmailPhoneInput(controller: controller),
-        //       child: EmailPhoneInput(controller: controller), // EPhone(),
-        //     ),
-        //   ),
-        // ),
-        // getPages: AppRoutes.routes,
         // home: Scaffold(
         //   backgroundColor: TColors.primary,
         //   body: Center(child: CircularProgressIndicator(color: Colors.white)),
         // ),
-        home: BottomNavigator(),
+        home: OnboardingScreen(),
       ),
     );
     // home: const VideoListingScreen()),

@@ -10,12 +10,12 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 // import 'package:dronees/utils/constants/colors.dart';
 
 class AttendanceMarkScreen extends StatelessWidget {
-  final controller = Get.put(AttendanceController());
-
-  AttendanceMarkScreen({super.key});
+  const AttendanceMarkScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final AttendanceController controller = AttendanceController.instance;
+    controller.initMarkScreen();
     return Scaffold(
       backgroundColor: Colors.white,
       body: CustomScrollView(
@@ -143,6 +143,7 @@ class AttendanceMarkScreen extends StatelessWidget {
   }
 
   Widget _buildEnhancedProfileCard() {
+    final controller = AttendanceController.instance;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -212,6 +213,7 @@ class AttendanceMarkScreen extends StatelessWidget {
   }
 
   Widget _buildEnhancedScheduleCard() {
+    final controller = AttendanceController.instance;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -263,6 +265,7 @@ class AttendanceMarkScreen extends StatelessWidget {
   }
 
   Widget _buildSelfiePreview() {
+    final controller = AttendanceController.instance;
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: Stack(
@@ -292,7 +295,7 @@ class AttendanceMarkScreen extends StatelessWidget {
   }
 
   Widget _buildMainActionButton(BuildContext context) {
-    bool isLocationLoading = controller.currentPosition.value == null;
+    final controller = AttendanceController.instance;
     bool hasPhoto = controller.selfieFile.value != null;
 
     return ElevatedButton(
@@ -304,7 +307,7 @@ class AttendanceMarkScreen extends StatelessWidget {
         shadowColor: const Color(0xFF5F4FD1).withOpacity(0.4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
-      onPressed: isLocationLoading
+      onPressed: controller.isLoading.value
           ? null
           : (!hasPhoto
                 ? () => controller.takeSelfieAndTag()
@@ -317,8 +320,9 @@ class AttendanceMarkScreen extends StatelessWidget {
                     confirmButtonText: "Yes, Mark Now",
                     cancelButtonText: "Cancel",
                     onConfirm: () => controller.clockIn(),
+                    cancelOutside: false,
                   )),
-      child: isLocationLoading
+      child: controller.isLoading.value
           ? const SizedBox(
               width: 20,
               height: 20,

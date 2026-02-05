@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:io';
 import 'package:dronees/features/authorized/equipment/models/equipment.dart';
+import 'package:dronees/utils/constants/image_strings.dart';
 import 'package:dronees/utils/constants/text_strings.dart';
 import 'package:dronees/utils/validators/validation.dart';
 import 'package:dronees/widgets/custom_file_picker.dart';
@@ -54,12 +55,16 @@ class AssignEquipmentScreen extends StatelessWidget {
                 key: controller.equipmentFormKey,
                 child: Column(
                   children: [
-                    // Form Container
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(22),
+                      child: Image.asset(TImages.equipmentBanner),
+                    ),
+                    SizedBox(height: TSizes.spaceBtwItems),
                     Container(
                       padding: const EdgeInsets.all(TSizes.defaultPadding),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(22),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.05),

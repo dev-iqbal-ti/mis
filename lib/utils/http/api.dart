@@ -5,57 +5,29 @@ class API {
 
   static final getApis = GetApis();
   static final postApis = PostApis();
+  static final deleteApis = DeleteApis();
 
   static const String apiVersion = "v1";
-  static String stytchSignUpUrl =
-      "https://test.stytch.com/v1/passwords/session/reset";
-  static String stytchLoginUrl =
-      "https://test.stytch.com/v1/passwords/authenticate";
-  static String stytchOauthAuthenticate =
-      "https://test.stytch.com/v1/oauth/authenticate";
-  static String stytchForgetPasswordUrl =
-      "https://test.stytch.com/v1/passwords/email/reset/start";
-  static String stytchOtpSendUrl =
-      "https://test.stytch.com/v1/otps/email/login_or_create";
-  static String stytchOtpVerifyUrl =
-      "https://test.stytch.com/v1/otps/authenticate";
-  static String oAuthGoogleStart =
-      "https://test.stytch.com/v1/public/oauth/google/start";
-  static String stytchUpdateUser = "https://test.stytch.com/v1/users";
-  static String stytchSearchUserUrl = "https://test.stytch.com/v1/users/search";
-  static String elevenlabsGetVoices = "https://api.elevenlabs.io/v1/voices";
-  static String elevenlabsTextToSpeech =
-      "https://api.elevenlabs.io/v1/text-to-speech";
-  static String stytchRevokeSessionUrl =
-      "https://test.stytch.com/v1/sessions/revoke";
+}
+
+class DeleteApis {
+  String deleteTravelAllowance(int id) => "/travel/$id";
 }
 
 class GetApis {
-  final String getUser = "/user";
-  final String fetchMusic = "/fetch-edls";
-  final String fetchVoices = "/fetch-voices";
-  final String fetchVideoList = "/fetch-video-list";
-  final String createSession = "/create-session";
-  final String userDetails = "/user-details";
-  final String fetchUsedImages = "/fetch-used-images";
-  final String deleteAccount = "/delete-user";
-  final String updateView = "/update-view";
   // final String userDetails = "/user-details"
+  String getPunchingData(int userId) => "/attendance/punchingData/$userId";
+  String getPunchingDataById(int id) => "/attendance/punch/$id";
+  final String getTravelAllowance = "/travel/my";
+  final String getTravelAllowanceStats = "/travel/stats";
 }
 
 class PostApis {
-  final String checkUser = "/check-user";
-  final String signUp = "/signup";
-  final String uploadImage = "/upload";
-  final String textToSpeech = "/text-to-speech";
-  final String createVideo = "/create-video";
-  final String getSignedUrl = "/generate-signed-url";
-  final String markAsFavourite = "/favourite";
-  final String deleteVideo = "/delete-video";
-  final String fetchVideoImages = "/fetch-video-images";
-  final String fetchPropertyDetails = "/fetch-property-details";
-  final String deleteImage = "/delete-image";
-  final String excludeImage = "/exclude-image";
-  final String downloadVideo = "/download-video";
-  final String updateDetails = "/update-details";
+  // final String checkUser = "/check-user";
+  // auth....
+  final String login = "/auth/login";
+  final String markPunchIn = "/attendance/punchingData";
+  final String markPunchOut = "/attendance/punch-out";
+  final String submitAllowance = "/travel";
+  final String approveTAByDepartment = "/travel/approve-department";
 }

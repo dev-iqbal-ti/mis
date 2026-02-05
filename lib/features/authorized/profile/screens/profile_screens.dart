@@ -1,3 +1,4 @@
+import 'package:dronees/controllers/auth_controller.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:flutter/material.dart';
 
@@ -137,13 +138,18 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildHeaderButton(IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF8F8F8),
-        shape: BoxShape.circle,
+    return InkWell(
+      onTap: () {
+        AuthController.instance.logout();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: const BoxDecoration(
+          color: Color(0xFFF8F8F8),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.black, size: 20),
       ),
-      child: Icon(icon, color: Colors.black, size: 20),
     );
   }
 

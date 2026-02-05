@@ -1,5 +1,6 @@
 import 'package:dronees/features/authorized/field_task/controllers/field_task_controller.dart';
 import 'package:dronees/utils/constants/colors.dart';
+import 'package:dronees/utils/constants/image_strings.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:dronees/utils/constants/text_strings.dart';
 import 'package:dronees/utils/validators/validation.dart';
@@ -38,187 +39,208 @@ class FieldTaskScreen extends StatelessWidget {
               padding: const EdgeInsets.all(TSizes.defaultPadding),
               child: Form(
                 key: controller.taskFormKey,
-                child: Container(
-                  padding: const EdgeInsets.all(TSizes.defaultPadding),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLabel("Client Name"),
-                      TextFormField(
-                        controller: controller.clientNameController,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        decoration: _buildInputDecoration(
-                          hint: "Enter client name",
-                          icon: Iconsax.user,
-                        ),
-                        validator: (value) =>
-                            TValidator.emptyValidator(value, "Client Name"),
+                child: Column(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(22),
+                      child: Image.asset(TImages.taskBanner),
+                    ),
+                    SizedBox(height: TSizes.spaceBtwItems),
+                    Container(
+                      padding: const EdgeInsets.all(TSizes.defaultPadding),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
                       ),
-                      const SizedBox(height: TSizes.spaceBtwItems),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildLabel("Client Name"),
+                          TextFormField(
+                            controller: controller.clientNameController,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            decoration: _buildInputDecoration(
+                              hint: "Enter client name",
+                              icon: Iconsax.user,
+                            ),
+                            validator: (value) =>
+                                TValidator.emptyValidator(value, "Client Name"),
+                          ),
+                          const SizedBox(height: TSizes.spaceBtwItems),
 
-                      _buildLabel("Client Phone Number"),
-                      EPhoneField(
-                        controller: controller.phoneController,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        phoneValidator: TValidator.validatePhoneNumber,
-                        initialCountry: Country.india,
-                        countries: const [Country.india],
-                        initialType: EphoneFieldType.phone,
-                        decoration: _buildInputDecoration(hint: "Phone Number"),
-                      ),
-                      const SizedBox(height: TSizes.spaceBtwItems),
-                      _buildLabel("Client Project"),
-                      CustomBottomSheetDropdown(
-                        validator: (value) => TValidator.validateNull(
-                          value,
-                          "Project is required.",
-                        ),
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        label: "Select Project",
-                        items: controller.projects,
-                        selectedValue: controller.selectedProject,
-                        onSelect: (val) =>
-                            controller.selectedProject.value = val,
-                        icon: Iconsax.folder,
-                      ),
+                          _buildLabel("Client Phone Number"),
+                          EPhoneField(
+                            controller: controller.phoneController,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            phoneValidator: TValidator.validatePhoneNumber,
+                            initialCountry: Country.india,
+                            countries: const [Country.india],
+                            initialType: EphoneFieldType.phone,
+                            decoration: _buildInputDecoration(
+                              hint: "Phone Number",
+                            ),
+                          ),
+                          const SizedBox(height: TSizes.spaceBtwItems),
+                          _buildLabel("Client Project"),
+                          CustomBottomSheetDropdown(
+                            validator: (value) => TValidator.validateNull(
+                              value,
+                              "Project is required.",
+                            ),
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            label: "Select Project",
+                            items: controller.projects,
+                            selectedValue: controller.selectedProject,
+                            onSelect: (val) =>
+                                controller.selectedProject.value = val,
+                            icon: Iconsax.folder,
+                          ),
 
-                      const SizedBox(height: TSizes.spaceBtwItems),
-                      _buildLabel("Work Type"),
-                      CustomBottomSheetDropdown(
-                        label: "Work Type",
-                        validator: (value) => TValidator.validateNull(
-                          value,
-                          "Work type is required.",
-                        ),
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        items: controller.workTypes,
-                        selectedValue: controller.selectedWorkType,
-                        onSelect: (val) =>
-                            controller.selectedWorkType.value = val,
-                        icon: Iconsax.setting_4,
-                      ),
+                          const SizedBox(height: TSizes.spaceBtwItems),
+                          _buildLabel("Work Type"),
+                          CustomBottomSheetDropdown(
+                            label: "Work Type",
+                            validator: (value) => TValidator.validateNull(
+                              value,
+                              "Work type is required.",
+                            ),
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            items: controller.workTypes,
+                            selectedValue: controller.selectedWorkType,
+                            onSelect: (val) =>
+                                controller.selectedWorkType.value = val,
+                            icon: Iconsax.setting_4,
+                          ),
 
-                      const SizedBox(height: TSizes.spaceBtwItems),
+                          const SizedBox(height: TSizes.spaceBtwItems),
 
-                      _buildLabel("Team Members"),
-                      FormField<List<String>>(
-                        initialValue: controller.selectedTeamMembers,
-                        // validator: TValidator.validateTeamMember,
-                        // autovalidateMode: AutovalidateMode.onUserInteraction,
-                        // onSaved: (newValue) {
-                        //   controller.selectedTeamMembers.value = newValue ?? [];
-                        // },
-                        builder: (FormFieldState<List<String>> field) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              GestureDetector(
-                                onTap: () => _showMultiSelectSheet(
-                                  context,
-                                  controller,
-                                  field,
-                                ),
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  constraints: const BoxConstraints(
-                                    minHeight: 55,
-                                  ),
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8F9FA),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: field.hasError
-                                          ? TColors.error
-                                          : const Color(0xFFE8E8E8),
+                          _buildLabel("Team Members"),
+                          FormField<List<String>>(
+                            initialValue: controller.selectedTeamMembers,
+                            // validator: TValidator.validateTeamMember,
+                            // autovalidateMode: AutovalidateMode.onUserInteraction,
+                            // onSaved: (newValue) {
+                            //   controller.selectedTeamMembers.value = newValue ?? [];
+                            // },
+                            builder: (FormFieldState<List<String>> field) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => _showMultiSelectSheet(
+                                      context,
+                                      controller,
+                                      field,
                                     ),
-                                  ),
-                                  child: field.value?.isEmpty ?? false
-                                      ? const Text(
-                                          "Select Team Members",
-                                          style: TextStyle(color: Colors.grey),
-                                        )
-                                      : Wrap(
-                                          spacing: 8,
-                                          runSpacing: 4,
-                                          children: field.value!
-                                              .map(
-                                                (e) => Chip(
-                                                  label: Text(
-                                                    e,
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                    ),
-                                                  ),
-                                                  deleteIcon: const Icon(
-                                                    Icons.close,
-                                                    size: 14,
-                                                  ),
-                                                  onDeleted: () => controller
-                                                      .toggleTeamMember(e),
-                                                  backgroundColor: TColors
-                                                      .primary
-                                                      .withOpacity(0.1),
-                                                ),
-                                              )
-                                              .toList(),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      constraints: const BoxConstraints(
+                                        minHeight: 55,
+                                      ),
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF8F9FA),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: field.hasError
+                                              ? TColors.error
+                                              : const Color(0xFFE8E8E8),
                                         ),
-                                ),
-                              ),
-                              if (field.hasError)
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: 12,
-                                    top: 8.0,
-                                  ),
-                                  child: Text(
-                                    field.errorText!,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: TColors.error,
+                                      ),
+                                      child: field.value?.isEmpty ?? false
+                                          ? const Text(
+                                              "Select Team Members",
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                              ),
+                                            )
+                                          : Wrap(
+                                              spacing: 8,
+                                              runSpacing: 4,
+                                              children: field.value!
+                                                  .map(
+                                                    (e) => Chip(
+                                                      label: Text(
+                                                        e,
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                        ),
+                                                      ),
+                                                      deleteIcon: const Icon(
+                                                        Icons.close,
+                                                        size: 14,
+                                                      ),
+                                                      onDeleted: () =>
+                                                          controller
+                                                              .toggleTeamMember(
+                                                                e,
+                                                              ),
+                                                      backgroundColor: TColors
+                                                          .primary
+                                                          .withOpacity(0.1),
+                                                    ),
+                                                  )
+                                                  .toList(),
+                                            ),
                                     ),
                                   ),
-                                ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: TSizes.spaceBtwItems),
+                                  if (field.hasError)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 12,
+                                        top: 8.0,
+                                      ),
+                                      child: Text(
+                                        field.errorText!,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: TColors.error,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
+                          ),
+                          const SizedBox(height: TSizes.spaceBtwItems),
 
-                      _buildLabel("Geo Location (Auto-detected)"),
-                      TextFormField(
-                        controller: controller.locationController,
-                        readOnly: true,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey,
-                        ),
-                        decoration: _buildInputDecoration(
-                          hint: "Detecting location...",
-                          icon: Iconsax.location,
-                        ),
+                          _buildLabel("Geo Location (Auto-detected)"),
+                          TextFormField(
+                            controller: controller.locationController,
+                            readOnly: true,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey,
+                            ),
+                            decoration: _buildInputDecoration(
+                              hint: "Detecting location...",
+                              icon: Iconsax.location,
+                            ),
+                          ),
+                          const SizedBox(height: TSizes.spaceBtwItems),
+                          _buildLabel("Nature of Job"),
+                          CustomBottomSheetDropdown(
+                            validator: (value) => TValidator.validateNull(
+                              value,
+                              "Nature of job is required.",
+                            ),
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            label: "Nature of Job",
+                            items: controller.jobNatureList,
+                            selectedValue: controller.selectedNatureOfJob,
+                            onSelect: (val) =>
+                                controller.selectedNatureOfJob.value = val,
+                            icon: Iconsax.briefcase,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: TSizes.spaceBtwItems),
-                      _buildLabel("Nature of Job"),
-                      CustomBottomSheetDropdown(
-                        validator: (value) => TValidator.validateNull(
-                          value,
-                          "Nature of job is required.",
-                        ),
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        label: "Nature of Job",
-                        items: controller.jobNatureList,
-                        selectedValue: controller.selectedNatureOfJob,
-                        onSelect: (val) =>
-                            controller.selectedNatureOfJob.value = val,
-                        icon: Iconsax.briefcase,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

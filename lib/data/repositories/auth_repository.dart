@@ -1,3 +1,4 @@
+import 'package:dronees/bottom_navigator.dart';
 import 'package:dronees/controllers/auth_controller.dart';
 import 'package:dronees/routes/appRoute.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -19,7 +20,7 @@ class AuthRepository extends GetxController {
     final String data = await AuthController.instance.initAuthUser();
 
     if (data == "User") {
-      Get.offAllNamed(AppRoutes.HOME);
+      Get.offAll(() => BottomNavigator());
     } else if (data == "Name Required") {
       // Get.offAll(() => const LetsGetStartedScreen());
     } else {

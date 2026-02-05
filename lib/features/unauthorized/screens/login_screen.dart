@@ -1,24 +1,20 @@
 import 'dart:ui';
 
 import 'package:dronees/features/authorized/attendance/widgets/input_field.dart';
+import 'package:dronees/features/unauthorized/controllers/login_controller.dart';
 import 'package:dronees/utils/constants/colors.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:dronees/utils/constants/text_strings.dart';
+import 'package:dronees/utils/validators/validation.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
-
-  @override
-  State<LoginScreen> createState() => _LoginScreenState();
-}
-
-class _LoginScreenState extends State<LoginScreen> {
-  bool obscure = true;
-  bool remember = false;
-
   @override
   Widget build(BuildContext context) {
+    final LoginController controller = Get.put(LoginController());
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -81,6 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _cardContainer() {
+    final controller = LoginController.instance;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: TSizes.defaultPadding),
       padding: const EdgeInsets.all(TSizes.defaultPadding),
@@ -95,84 +92,100 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Center(
-            child: Text(
-              TTexts.signInBtn,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-          ),
-          Center(
-            child: Text(
-              TTexts.signInToAccount,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
-            ),
-          ),
-          const SizedBox(height: TSizes.spaceBtwInputFields),
-
-          _label("Email"),
-          inputField(hint: "joedoe75@gmail.com", icon: Icons.mail_outline),
-          const SizedBox(height: TSizes.spaceBtwInputFields),
-          _label("Password"),
-          inputField(
-            hint: "********",
-            icon: Icons.lock_outline,
-            obscure: obscure,
-            suffix: IconButton(
-              icon: Icon(
-                obscure
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
+      child: Form(
+        key: controller.formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Center(
+              child: Text(
+                TTexts.signInBtn,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              onPressed: () {
-                setState(() => obscure = !obscure);
-              },
             ),
-          ),
-
-          // const SizedBox(height: TSizes.minSpaceBtw - 4),
-          Row(
-            children: [
-              Checkbox(
-                value: remember,
-                onChanged: (v) {
-                  setState(() => remember = v!);
-                },
-                activeColor: const Color(0xFF2F6DF6),
+            Center(
+              child: Text(
+                TTexts.signInToAccount,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
               ),
-              const Text("Remember me"),
-              const Spacer(),
-              TextButton(
-                onPressed: () {},
-                child: const Text(
-                  "Forget password?",
-                  style: TextStyle(color: TColors.buttonPrimary),
+            ),
+            const SizedBox(height: TSizes.spaceBtwInputFields),
+
+            _label("Email"),
+            inputField(
+              controller: controller.emailController,
+              validator: TValidator.validateEmail,
+              hint: "joedoe75@gmail.com",
+              icon: Icons.mail_outline,
+            ),
+            const SizedBox(height: TSizes.spaceBtwInputFields),
+            _label("Password"),
+            Obx(
+              () => inputField(
+                controller: controller.passwordController,
+                validator: TValidator.passwordValidator,
+                hint: "********",
+                icon: Icons.lock_outline,
+                obscure: controller.obscure.value,
+                suffix: IconButton(
+                  icon: Icon(
+                    controller.obscure.value
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                  ),
+                  onPressed: () {
+                    controller.obscure.value = !controller.obscure.value;
+                  },
                 ),
               ),
-            ],
-          ),
+            ),
 
-          const SizedBox(height: TSizes.minSpaceBtw),
+            // const SizedBox(height: TSizes.minSpaceBtw - 4),
+            Row(
+              children: [
+                Spacer(),
+                Obx(
+                  () => CupertinoCheckbox(
+                    value: controller.remember.value,
+                    onChanged: (v) {
+                      controller.remember.value = v ?? false;
+                    },
+                    activeColor: const Color(0xFF2F6DF6),
+                  ),
+                ),
+                const Text("Remember me"),
+              ],
+            ),
 
-          SizedBox(
-            width: double.infinity,
-            height: 55,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: TColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+            const SizedBox(height: TSizes.minSpaceBtw),
+
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: Obx(
+                () => ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: TColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  onPressed: () {
+                    if (controller.formKey.currentState!.validate() &&
+                        !controller.isLoading.value) {
+                      controller.login();
+                    }
+                  },
+                  child: controller.isLoading.value
+                      ? const CupertinoActivityIndicator(color: Colors.white)
+                      : const Text("Login", style: TextStyle(fontSize: 18)),
                 ),
               ),
-              onPressed: () {},
-              child: const Text("Login", style: TextStyle(fontSize: 18)),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

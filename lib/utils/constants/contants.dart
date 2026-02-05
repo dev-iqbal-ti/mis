@@ -9,20 +9,20 @@ import 'package:get/get.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 final List<QuickAction> homeScreenQuickActions = [
-  QuickAction(
-    icon: Iconsax.gallery_add,
-    title: 'Upload',
-    subtitle: 'Add images',
-    color: const Color(0xFF6C5CE7),
-    onTap: () {},
-  ),
-  QuickAction(
-    icon: Iconsax.receipt_add,
-    title: 'Submit TA',
-    subtitle: 'New claim',
-    color: const Color(0xFF00D9A5),
-    onTap: () {},
-  ),
+  // QuickAction(
+  //   icon: Iconsax.gallery_add,
+  //   title: 'Upload',
+  //   subtitle: 'Add images',
+  //   color: const Color(0xFF6C5CE7),
+  //   onTap: () {},
+  // ),
+  // QuickAction(
+  //   icon: Iconsax.receipt_add,
+  //   title: 'Submit TA',
+  //   subtitle: 'New claim',
+  //   color: const Color(0xFF00D9A5),
+  //   onTap: () {},
+  // ),
   QuickAction(
     icon: Iconsax.box,
     title: 'Equipment Tracking',

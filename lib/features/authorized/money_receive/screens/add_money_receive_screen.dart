@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dronees/features/authorized/money_receive/controllers/money_receive_controller.dart';
+import 'package:dronees/utils/constants/image_strings.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:dronees/utils/helpers/image_picker_helper.dart';
 import 'package:dronees/utils/validators/validation.dart';
@@ -42,6 +43,12 @@ class AddMoneyReceiveScreen extends StatelessWidget {
                 key: controller.paymentFormKey,
                 child: Column(
                   children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Image.asset(TImages.receivedMoneyBanner),
+                    ),
+                    SizedBox(height: TSizes.spaceBtwItems),
+
                     Container(
                       padding: const EdgeInsets.all(TSizes.defaultPadding),
                       decoration: BoxDecoration(
