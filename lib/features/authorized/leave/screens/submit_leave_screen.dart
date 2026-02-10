@@ -82,7 +82,9 @@ class SubmitLeaveScreen extends StatelessWidget {
 
                     _buildFieldLabel("Leave Category"),
                     const SizedBox(height: 6),
-                    CustomBottomSheetDropdown(
+                    CustomBottomSheetDropdown<String>(
+                      displayText: (reason) => reason,
+                      isLoading: RxBool(false),
                       label: "Choose a Leave Category",
                       items: const [
                         "Casual Leave",

@@ -1,67 +1,62 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:dronees/controllers/auth_controller.dart';
+import 'package:dronees/features/authorized/equipment/models/assign_equipment.dart';
 import 'package:dronees/features/authorized/equipment/models/equipment.dart';
 import 'package:dronees/features/authorized/equipment/screens/assign_equipment_screen.dart';
 import 'package:dronees/utils/helpers/image_picker_helper.dart';
+import 'package:dronees/utils/http/api.dart';
+import 'package:dronees/utils/http/http_client.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 class EquipmentController extends GetxController {
-  final equipmentList = <Equipment>[].obs;
-  final selectedEquipment = Rx<Equipment?>(null);
-  final projectNameController = TextEditingController();
-  final remarkController = TextEditingController();
-  final selectedImage = Rx<File?>(null);
+  static EquipmentController get instance => Get.find();
+  RxList<AssignEquipment> assignEquipmentList = RxList<AssignEquipment>([]);
+  RxBool isLoading = RxBool(false);
+
   final returnImage = Rx<File?>(null);
   final returnFormKey = GlobalKey<FormState>();
   final returnRemarkController = TextEditingController();
-  // final selectedFile = Rx<File?>(null);
-  final ImagePicker _picker = ImagePicker();
 
-  // *Global key for equipment form....
-  GlobalKey<FormState> equipmentFormKey = GlobalKey<FormState>();
+  RxInt assignedEquipment = RxInt(0);
+  RxInt availableEquipment = RxInt(0);
+  RxInt equipmentList = RxInt(0);
 
   @override
   void onInit() {
     super.onInit();
-    _loadEquipment();
+    _fetchAssignEquipment();
   }
 
-  void _loadEquipment() {
-    equipmentList.value = [
-      Equipment(id: '1', name: 'DJI Air 3 UAV & Accessories'),
-      Equipment(id: '2', name: 'DJI Mavic 4 Pro UAV & Accessories'),
-      Equipment(id: '3', name: 'South Galaxy G1 Pro DGPS'),
-      Equipment(id: '4', name: 'Spectra SP85 DGPS (Unit 1)'),
-      Equipment(id: '5', name: 'Spectra SP85 DGPS (Unit II)'),
-      Equipment(id: '6', name: 'ideaForge Q6 UAV & Accessories'),
-      Equipment(id: '7', name: 'ideaForge Q6 V2 UAV & Accessories'),
-      Equipment(id: '8', name: 'ideaForge RYNO UAV & Accessories'),
-    ];
+  @override
+  void onClose() {
+    returnRemarkController.dispose();
+    super.onClose();
   }
 
-  List<Equipment> get assignedEquipment =>
-      equipmentList.where((e) => e.isAssigned).toList();
-
-  List<Equipment> get availableEquipment =>
-      equipmentList.where((e) => !e.isAssigned).toList();
-
-  Future<void> pickImage(FormFieldState<File> field) async {
-    final file = await ImageUploadService.pickImageFromSource(
-      ImageSource.gallery,
+  void _fetchAssignEquipment() async {
+    final response = await THttpHelper.getRequest(
+      API.getApis.getAssignedEquipments,
+      queryParams: {
+        "user_id": AuthController.instance.authUser?.userDetails.id.toString(),
+      },
     );
-
-    if (file != null) {
-      selectedImage.value = file;
-      field.didChange(file);
-    }
+    if (response == null) return;
+    assignedEquipment.value = response["data"]["assignedCount"];
+    availableEquipment.value = response["data"]["availableCount"];
+    equipmentList.value = response["data"]["totalCount"];
+    assignEquipmentList.value = assignEquipmentFromJson(
+      json.encode(response["data"]["rows"]),
+    );
   }
 
   Future<void> pickReturnImage(FormFieldState<File> field) async {
     final file = await ImageUploadService.pickImageFromSource(
-      ImageSource.camera,
+      ImageSource.gallery,
     );
 
     if (file != null) {
@@ -70,119 +65,41 @@ class EquipmentController extends GetxController {
     }
   }
 
-  void finalizeReturn(Equipment equipment) {
+  void finalizeReturn(AssignEquipment equipment) async {
     if (returnFormKey.currentState?.validate() ?? false) {
-      log(returnImage.value.toString());
-      if (returnImage.value == null) {
-        Get.snackbar(
-          "Photo Required",
-          "Please take a photo of the equipment state.",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
-        );
+      isLoading.value = true;
+
+      final unAssign = <String, dynamic>{
+        "equipmentId": equipment.equipmentId,
+        "remark": returnRemarkController.text,
+      };
+
+      final response = await THttpHelper.formDataRequest(
+        API.postApis.unassignEquipment,
+        returnImage.value,
+        unAssign,
+      );
+      isLoading.value = false;
+
+      if (response == null) {
         return;
       }
-
-      final index = equipmentList.indexWhere((e) => e.id == equipment.id);
-      if (index != -1) {
-        equipmentList[index] = equipment.copyWith(
-          isAssigned: false,
-          assignedTo: null,
-          assignedDate: null,
-          projectName: null,
-          remark: null, // Clear old remarks
-          photoUrl: null, // Clear old photo
-        );
-
-        // Reset return form
-        returnRemarkController.clear();
-        returnImage.value = null;
-
-        Get.back(); // Close Bottom Sheet
-        Get.snackbar(
-          "Success",
-          "${equipment.name} returned to office.",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
-      }
+      _fetchAssignEquipment();
+      _clearForm();
+      Get.back(); // Close Bottom Sheet
     }
   }
 
-  void submitEquipment(Equipment equipment) {
-    final index = equipmentList.indexWhere((e) => e.id == equipment.id);
-    if (index != -1) {
-      equipmentList[index] = equipment.copyWith(
-        isAssigned: false,
-        assignedTo: null,
-        assignedDate: null,
-        projectName: null,
-        remark: null,
-        photoUrl: null,
-      );
-      Get.snackbar(
-        'Success',
-        'Equipment submitted to office',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
+  void refreshAssignments() {
+    _fetchAssignEquipment();
   }
 
   void _clearForm() {
-    equipmentFormKey.currentState?.reset();
-    projectNameController.clear();
-    remarkController.clear();
-    selectedImage.value = null;
-    selectedEquipment.value = null;
+    returnRemarkController.clear();
+    returnImage.value = null;
   }
 
-  void assignEquipment(Equipment equipment) {
-    if (projectNameController.text.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Project name is required',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-
-    if (selectedEquipment.value == null) {
-      Get.snackbar(
-        'Error',
-        'Please select an equipment',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-
-    final index = equipmentList.indexWhere((e) => e.id == equipment.id);
-    if (index != -1) {
-      equipmentList[index] = equipment.copyWith(
-        isAssigned: true,
-        assignedTo: 'Current User', // Replace with real user data
-        assignedDate: DateTime.now().toString().split(' ')[0],
-        projectName: projectNameController.text,
-        remark: remarkController.text,
-        photoUrl: selectedImage.value?.path,
-      );
-
-      _clearForm();
-      Get.back();
-    }
-  }
-
-  // Ensure you clear the form before navigating to the Assign screen
   void goToAssignScreen() {
-    _clearForm();
     Get.to(() => const AssignEquipmentScreen());
-  }
-
-  @override
-  void onClose() {
-    projectNameController.dispose();
-    remarkController.dispose();
-    super.onClose();
   }
 }

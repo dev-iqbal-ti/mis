@@ -206,7 +206,9 @@ class SubmitTravelAllowance extends StatelessWidget {
                             // ── 2. Tour Type dropdown ───────────────────────
                             _sectionLabel('Tour Type'),
                             const SizedBox(height: 8),
-                            CustomBottomSheetDropdown(
+                            CustomBottomSheetDropdown<String>(
+                              displayText: (mode) => mode,
+                              isLoading: RxBool(false),
                               validator: (value) => TValidator.validateNull(
                                 value,
                                 "Please Select a Tour Type",

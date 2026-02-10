@@ -16,4 +16,6 @@ class TImages {
 
   // --animation --
   static const String deleteLoading = 'assets/animations/delete_file.json';
+  static const String emptyList = 'assets/animations/Empty_List.json';
+  static const String image_preview = 'assets/animations/image_preview.json';
 }

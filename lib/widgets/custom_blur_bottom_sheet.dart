@@ -10,9 +10,11 @@ class CustomBlurBottomSheet extends StatelessWidget {
   static void show(
     BuildContext context, {
     required Widget widget,
+    bool isDismissible = true,
     Function()? onClosed,
   }) {
     showModalBottomSheet(
+      isDismissible: isDismissible,
       showDragHandle: false,
       context: context,
       backgroundColor: Colors.transparent,

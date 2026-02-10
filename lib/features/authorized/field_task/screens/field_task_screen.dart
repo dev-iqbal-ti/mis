@@ -84,7 +84,9 @@ class FieldTaskScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: TSizes.spaceBtwItems),
                           _buildLabel("Client Project"),
-                          CustomBottomSheetDropdown(
+                          CustomBottomSheetDropdown<String>(
+                            displayText: (value) => value,
+                            isLoading: RxBool(false),
                             validator: (value) => TValidator.validateNull(
                               value,
                               "Project is required.",
@@ -101,7 +103,9 @@ class FieldTaskScreen extends StatelessWidget {
 
                           const SizedBox(height: TSizes.spaceBtwItems),
                           _buildLabel("Work Type"),
-                          CustomBottomSheetDropdown(
+                          CustomBottomSheetDropdown<String>(
+                            displayText: (value) => value,
+                            isLoading: RxBool(false),
                             label: "Work Type",
                             validator: (value) => TValidator.validateNull(
                               value,
@@ -223,7 +227,9 @@ class FieldTaskScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: TSizes.spaceBtwItems),
                           _buildLabel("Nature of Job"),
-                          CustomBottomSheetDropdown(
+                          CustomBottomSheetDropdown<String>(
+                            displayText: (value) => value,
+                            isLoading: RxBool(false),
                             validator: (value) => TValidator.validateNull(
                               value,
                               "Nature of job is required.",

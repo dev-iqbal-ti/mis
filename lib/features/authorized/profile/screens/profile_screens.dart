@@ -104,15 +104,14 @@ class ProfileScreen extends StatelessWidget {
                     _buildListTile(Icons.email, "Tonald@gmail.com"),
                   ]),
 
-                  _buildSectionTitle("ACCOUNT"),
-                  _buildCard(secondaryBgColor, [
-                    _buildListTile(
-                      Icons.person,
-                      "Personal Data",
-                      hasNavigation: true,
-                    ),
-                  ]),
-
+                  // _buildSectionTitle("ACCOUNT"),
+                  // _buildCard(secondaryBgColor, [
+                  //   _buildListTile(
+                  //     Icons.person,
+                  //     "Personal Data",
+                  //     hasNavigation: true,
+                  //   ),
+                  // ]),
                   _buildSectionTitle("SETTINGS"),
                   _buildCard(secondaryBgColor, [
                     _buildListTile(

@@ -1,24 +1,24 @@
-import 'dart:io';
-
-import 'package:dronees/features/authorized/money_receive/controllers/money_receive_controller.dart';
+import 'package:dronees/features/authorized/money_receive/controllers/submit_money_received_controller.dart';
+import 'package:dronees/features/authorized/money_receive/models/projects_model.dart';
 import 'package:dronees/utils/constants/image_strings.dart';
 import 'package:dronees/utils/constants/sizes.dart';
-import 'package:dronees/utils/helpers/image_picker_helper.dart';
+
 import 'package:dronees/utils/validators/validation.dart';
 import 'package:dronees/widgets/custom_bottom_sheet_dropdown.dart';
 import 'package:dronees/widgets/custom_file_picker.dart';
-import 'package:dronees/widgets/upload_document.dart';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:image_picker/image_picker.dart';
 
 class AddMoneyReceiveScreen extends StatelessWidget {
   const AddMoneyReceiveScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<MoneyReceiveController>();
+    final SubmitMoneyReceivedController controller = Get.put(
+      SubmitMoneyReceivedController(),
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F3F8),
@@ -64,20 +64,17 @@ class AddMoneyReceiveScreen extends StatelessWidget {
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 6),
-                          CustomBottomSheetDropdown(
+                          CustomBottomSheetDropdown<ProjectsModel>(
+                            displayText: (project) => project.name,
+                            isLoading: RxBool(false),
                             validator: (value) => TValidator.validateNull(
                               value,
                               "Project is required.",
                             ),
                             autovalidateMode:
                                 AutovalidateMode.onUserInteraction,
-
                             label: "Select Project",
-                            items: const [
-                              "Skyline Residency",
-                              "Metro Bridge",
-                              "Global Tech Hub",
-                            ],
+                            items: controller.projects,
                             selectedValue: controller.selectedProject,
                             onSelect: (val) =>
                                 controller.selectedProject.value = val,
@@ -109,7 +106,9 @@ class AddMoneyReceiveScreen extends StatelessWidget {
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 6),
-                          CustomBottomSheetDropdown(
+                          CustomBottomSheetDropdown<String>(
+                            displayText: (mode) => mode,
+                            isLoading: RxBool(false),
                             validator: (value) => TValidator.validateNull(
                               value,
                               "Payment mode is required.",
@@ -199,19 +198,7 @@ class AddMoneyReceiveScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildImagePreview(File file) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Image.file(
-        file,
-        height: 180,
-        width: double.infinity,
-        fit: BoxFit.cover,
-      ),
-    );
-  }
-
-  Widget _buildBottomButton(MoneyReceiveController controller) {
+  Widget _buildBottomButton(SubmitMoneyReceivedController controller) {
     return Container(
       padding: const EdgeInsets.all(20),
       color: Colors.white,

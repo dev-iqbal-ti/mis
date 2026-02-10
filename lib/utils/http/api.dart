@@ -20,6 +20,14 @@ class GetApis {
   String getPunchingDataById(int id) => "/attendance/punch/$id";
   final String getTravelAllowance = "/travel/my";
   final String getTravelAllowanceStats = "/travel/stats";
+  final String getTravelAllowanceReportList = "/travel/list";
+
+  final String getGallery = "/gallery";
+
+  final String getEquipments = "/equipment";
+  final String getAssignedEquipments = "/equipment/assigned";
+
+  final String getProjects = "/master/projects";
 }
 
 class PostApis {
@@ -29,5 +37,13 @@ class PostApis {
   final String markPunchIn = "/attendance/punchingData";
   final String markPunchOut = "/attendance/punch-out";
   final String submitAllowance = "/travel";
-  final String approveTAByDepartment = "/travel/approve-department";
+  final String approveTA = "/travel/approve";
+  final String rejectTA = "/travel/reject";
+
+  // -- gallary --
+  final String uploadImage = "/gallery/upload";
+  String deleteImage(int id) => "/gallery/delete$id";
+
+  final String assignEquipment = "/equipment/assign";
+  final String unassignEquipment = "/equipment/unassign";
 }

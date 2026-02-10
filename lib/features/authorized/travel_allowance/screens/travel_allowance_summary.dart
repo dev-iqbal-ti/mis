@@ -1,14 +1,20 @@
 import 'dart:io';
 
+import 'package:dronees/controllers/auth_controller.dart';
 import 'package:dronees/features/authorized/travel_allowance/controllers/travel_allowsnce_controller.dart';
+import 'package:dronees/features/authorized/travel_allowance/models/ta_status.dart';
 import 'package:dronees/features/authorized/travel_allowance/models/travel_allowance_model.dart';
+import 'package:dronees/features/authorized/travel_allowance/screens/allowance_list_record.dart';
 import 'package:dronees/features/authorized/travel_allowance/screens/submit_travel_allowance.dart';
 import 'package:dronees/features/authorized/travel_allowance/screens/travel_allowance_detail_screen.dart';
+import 'package:dronees/models/user_model.dart';
 import 'package:dronees/utils/constants/colors.dart';
+import 'package:dronees/utils/constants/image_strings.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class TravelAllowanceSummary extends StatelessWidget {
@@ -213,11 +219,7 @@ class TravelAllowanceSummary extends StatelessWidget {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  Icons.inbox_outlined,
-                                  size: 64,
-                                  color: Colors.grey[400],
-                                ),
+                                Lottie.asset(TImages.emptyList, height: 100),
                                 const SizedBox(height: 16),
                                 Text(
                                   'No ${controller.selectedStatus.value.toLowerCase()} allowances',
@@ -236,7 +238,10 @@ class TravelAllowanceSummary extends StatelessWidget {
                           color: const Color(0xFF6C5CE7),
                           child: ListView.builder(
                             controller: controller.scrollController,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: TSizes.defaultPadding,
+                            ),
                             itemCount:
                                 controller.allowances.length +
                                 (controller.isLoadingMore.value ? 1 : 0),
@@ -255,7 +260,16 @@ class TravelAllowanceSummary extends StatelessWidget {
                               final allowance = controller.allowances[index];
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 10),
-                                child: AllowanceCard(allowance: allowance),
+                                child: AllowanceCard(
+                                  allowance: allowance,
+                                  isOwner:
+                                      AuthController
+                                          .instance
+                                          .authUser
+                                          ?.userDetails
+                                          .id ==
+                                      allowance.userId,
+                                ),
                               );
                             },
                           ),
@@ -277,25 +291,104 @@ class TravelAllowanceSummary extends StatelessWidget {
         ),
         width: double.infinity,
         color: const Color(0xFFF5F6FA),
-        child: ElevatedButton(
-          onPressed: () {
-            Get.to(() => SubmitTravelAllowance());
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF6C5CE7),
-            foregroundColor: Colors.white,
-            elevation: 8,
-            shadowColor: const Color(0xFF6C5CE7).withOpacity(0.4),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
-          child: const Text(
-            'Submit Allowance',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-        ),
+        child:
+            AuthController.instance.authUser?.userDetails.rolesDisplayNames ==
+                    UserRole.manager ||
+                AuthController
+                        .instance
+                        .authUser
+                        ?.userDetails
+                        .rolesDisplayNames ==
+                    UserRole.finance
+            ? Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(
+                          color: Color(0xFF6C5CE7),
+                          width: 1.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        foregroundColor: Colors.white,
+                        elevation: 8,
+
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: () {
+                        Get.to(
+                          () => AllowanceListRecordScreen(),
+                          arguments:
+                              AuthController
+                                      .instance
+                                      .authUser
+                                      ?.userDetails
+                                      .rolesDisplayNames ==
+                                  UserRole.manager
+                              ? TAStatus.approvedByDepartment
+                              : TAStatus.approvedByFinance,
+                        );
+                      },
+                      child: Text(
+                        "Show Record",
+                        style: TextStyle(
+                          color: const Color(0xFF6C5CE7),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.to(() => SubmitTravelAllowance());
+                      },
+                      style: ElevatedButton.styleFrom(
+                        side: const BorderSide(color: Colors.white, width: 1.5),
+                        backgroundColor: const Color(0xFF6C5CE7),
+                        foregroundColor: Colors.white,
+                        elevation: 8,
+                        shadowColor: const Color(0xFF6C5CE7).withOpacity(0.4),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        'Submit Allowance',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : ElevatedButton(
+                onPressed: () {
+                  Get.to(() => SubmitTravelAllowance());
+                },
+                style: ElevatedButton.styleFrom(
+                  side: const BorderSide(color: Colors.white, width: 1.5),
+                  backgroundColor: const Color(0xFF6C5CE7),
+                  foregroundColor: Colors.white,
+                  elevation: 8,
+                  shadowColor: const Color(0xFF6C5CE7).withOpacity(0.4),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text(
+                  'Submit Allowance',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
       ),
     );
   }
@@ -403,8 +496,13 @@ class TravelAllowanceSummary extends StatelessWidget {
 // Expandable Allowance Card Widget
 class AllowanceCard extends StatelessWidget {
   final TravelAllowance allowance;
+  final bool isOwner;
 
-  const AllowanceCard({super.key, required this.allowance});
+  const AllowanceCard({
+    super.key,
+    required this.allowance,
+    required this.isOwner,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -414,9 +512,8 @@ class AllowanceCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // Navigate to detail screen
         Get.to(
-          () => TravelAllowanceDetailScreen(data: allowance, isOwner: false),
+          () => TravelAllowanceDetailScreen(data: allowance, isOwner: isOwner),
         );
       },
       child: Container(

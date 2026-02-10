@@ -10,6 +10,10 @@ import 'package:http/http.dart' as http;
 class THttpHelper {
   static const String _baseUrl = "http://localhost:4000/api";
   // static const String _baseUrl = "http://10.0.2.2:4000/api";
+  // static const String _baseUrl = String.fromEnvironment(
+  //   'BACKEND_URL',
+  //   defaultValue: '',
+  // );
 
   static Map<String, String> get headers {
     return {
@@ -26,6 +30,8 @@ class THttpHelper {
     Map<String, dynamic>? queryParams,
     bool showError = true,
   }) async {
+    TLoggerHelper.customPrint(_baseUrl);
+
     TLoggerHelper.customPrint("In get request $endpoint");
 
     try {
@@ -47,6 +53,7 @@ class THttpHelper {
     String endpoint,
     dynamic data,
   ) async {
+    TLoggerHelper.customPrint(_baseUrl);
     TLoggerHelper.customPrint("In post request $endpoint");
     try {
       final response = await http.post(
@@ -54,6 +61,7 @@ class THttpHelper {
         headers: headers,
         body: jsonEncode(data),
       );
+      TLoggerHelper.customPrint(response.body, endpoint);
       return _handleResponse(response, endpoint, true);
     } catch (e) {
       log(e.toString());
@@ -150,10 +158,70 @@ class THttpHelper {
             : jsonDecode(response.data);
       }
       return null;
+    } on DioException catch (e) {
+      String message = "Something went wrong";
+
+      if (e.response != null) {
+        // Backend error message
+        message =
+            e.response?.data?['message'] ??
+            e.response?.statusMessage ??
+            message;
+      } else {
+        // Network / timeout / unknown
+        message = e.message ?? message;
+      }
+
+      log(message);
+      TLoggerHelper.customPrint(e);
+
+      TLoaders.errorSnackBar(title: "Error", message: message);
+      return null;
     } catch (e) {
       log(e.toString());
       TLoggerHelper.customPrint(e);
       TLoaders.errorSnackBar(title: "Error", message: "Something went wrong");
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> uploadImageWithProgress({
+    required String endpoint,
+    required File file,
+    required Function(double) onProgress,
+  }) async {
+    try {
+      TLoggerHelper.customPrint(endpoint);
+      final dio = Dio(BaseOptions(baseUrl: _baseUrl));
+
+      FormData formData = FormData.fromMap({
+        'image': await MultipartFile.fromFile(
+          file.path,
+          filename: file.path.split('/').last,
+        ),
+      });
+
+      final response = await dio.post(
+        endpoint,
+        data: formData,
+        options: Options(headers: headers),
+        // This is the magic part for the progress bar
+        onSendProgress: (int sent, int total) {
+          if (total != -1) {
+            double progress = sent / total;
+            onProgress(progress);
+          }
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data is Map<String, dynamic>
+            ? response.data
+            : jsonDecode(response.data);
+      }
+      return null;
+    } catch (e) {
+      log(e.toString());
       return null;
     }
   }
@@ -202,19 +270,11 @@ class THttpHelper {
   static void _showErrorToast(String body, String? endpoint, bool showError) {
     final Map<String, dynamic> data = jsonDecode(body);
     TLoggerHelper.customPrint(data, endpoint);
-    if (data["message"] == "Error occured!" &&
-        data.containsKey("error") &&
-        data["error"].containsKey("error_type")) {
-      String errorType = data["error"]["error_type"];
-      // String? message = Constants.stytchErrors[errorType];
-      TLoaders.errorSnackBar(title: "Error", message: "Something went wrong");
-      return;
-    }
     if (!showError &&
-        data['message'] == "Authentication Failed! User doesn't exist!") {
+        data['error'] == "Authentication Failed! User doesn't exist!") {
       return;
     }
-    String? message = data["message"];
+    String? message = data["error"];
     TLoaders.errorSnackBar(
       title: "Error",
       message: message ?? "Something went wrong",

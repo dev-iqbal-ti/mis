@@ -4,6 +4,14 @@ User userFromJson(String str) => User.fromJson(json.decode(str));
 
 String userToJson(User data) => json.encode(data.toJson());
 
+class UserRole {
+  static const manager = "Manager";
+  static const employee = "Employee";
+  static const finance = "Finance";
+  static const operations = "Operations";
+  static const hr = "HR";
+}
+
 class User {
   String accessToken;
   String refreshToken;
@@ -59,6 +67,7 @@ class UserDetails {
   int employerId;
   String orgEmailId;
   dynamic profilePic;
+  final String rolesDisplayNames;
   List<int> roles;
   String fullName;
 
@@ -89,6 +98,7 @@ class UserDetails {
     required this.employerId,
     required this.orgEmailId,
     required this.profilePic,
+    required this.rolesDisplayNames,
     required this.roles,
     required this.fullName,
   });
@@ -120,6 +130,7 @@ class UserDetails {
     employerId: json["employer_id"],
     orgEmailId: json["org_email_id"],
     profilePic: json["profile_pic"],
+    rolesDisplayNames: json["roles_display_names"],
     roles: List<int>.from(json["roles"].map((x) => x)),
     fullName: json["full_name"],
   );
@@ -151,6 +162,7 @@ class UserDetails {
     "employer_id": employerId,
     "org_email_id": orgEmailId,
     "profile_pic": profilePic,
+    "roles_display_names": rolesDisplayNames,
     "roles": List<dynamic>.from(roles.map((x) => x)),
     "full_name": fullName,
   };

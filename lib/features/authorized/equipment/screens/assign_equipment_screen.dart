@@ -1,18 +1,15 @@
-import 'dart:developer';
-import 'dart:io';
+import 'package:dronees/features/authorized/equipment/controllers/assign_equipment_controller.dart';
 import 'package:dronees/features/authorized/equipment/models/equipment.dart';
 import 'package:dronees/utils/constants/image_strings.dart';
 import 'package:dronees/utils/constants/text_strings.dart';
 import 'package:dronees/utils/validators/validation.dart';
 import 'package:dronees/widgets/custom_file_picker.dart';
 import 'package:dronees/widgets/submit_confirmation.dart';
-import 'package:dronees/widgets/upload_document.dart';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
-// Note: Ensure you have dotted_border package or use a custom painter
-import 'package:dotted_border/dotted_border.dart';
-import 'package:dronees/features/authorized/equipment/controllers/equipment_controller.dart';
+
 import 'package:dronees/utils/constants/colors.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 
@@ -21,7 +18,8 @@ class AssignEquipmentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<EquipmentController>();
+    final AssignEquipmentController controller =
+        Get.put<AssignEquipmentController>(AssignEquipmentController());
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F3F8),
@@ -99,12 +97,12 @@ class AssignEquipmentScreen extends StatelessWidget {
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 8),
-                          FormField<Equipment>(
+                          FormField<EquipmentModel>(
                             initialValue: controller.selectedEquipment.value,
                             autovalidateMode:
                                 AutovalidateMode.onUserInteraction,
                             validator: TValidator.validateEquipment,
-                            builder: (FormFieldState<Equipment> field) {
+                            builder: (FormFieldState<EquipmentModel> field) {
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -276,7 +274,7 @@ class AssignEquipmentScreen extends StatelessWidget {
 
   Widget _buildBottomButton(
     BuildContext context,
-    EquipmentController controller,
+    AssignEquipmentController controller,
   ) {
     return Container(
       padding: const EdgeInsets.all(TSizes.defaultPadding),
@@ -331,8 +329,8 @@ class AssignEquipmentScreen extends StatelessWidget {
   // --- THE CUSTOM BOTTOM SHEET DROPDOWN ---
   void _showEquipmentPicker(
     BuildContext context,
-    EquipmentController controller,
-    FormFieldState<Equipment> field,
+    AssignEquipmentController controller,
+    FormFieldState<EquipmentModel> field,
   ) {
     Get.bottomSheet(
       Container(
@@ -358,7 +356,7 @@ class AssignEquipmentScreen extends StatelessWidget {
                   separatorBuilder: (_, __) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final equipment = controller.equipmentList[index];
-                    final bool isTaken = equipment.isAssigned;
+                    final bool isTaken = equipment.assignedTo != null;
 
                     return ListTile(
                       enabled: !isTaken,
@@ -382,7 +380,7 @@ class AssignEquipmentScreen extends StatelessWidget {
                       ),
                       subtitle: isTaken
                           ? Text(
-                              "Assigned to: ${equipment.assignedTo ?? 'N/A'}",
+                              "Assigned to: ${equipment.assignedName ?? 'N/A'}",
                               style: const TextStyle(
                                 color: Colors.red,
                                 fontSize: 12,

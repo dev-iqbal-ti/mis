@@ -1,17 +1,19 @@
-import 'package:dotted_border/dotted_border.dart';
+import 'dart:ui';
+
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dronees/features/authorized/equipment/models/assign_equipment.dart';
 import 'package:dronees/utils/validators/validation.dart';
 import 'package:dronees/widgets/custom_blur_bottom_sheet.dart';
 import 'package:dronees/widgets/custom_file_picker.dart';
-import 'package:dronees/widgets/upload_document.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'dart:io';
 import 'package:dronees/features/authorized/equipment/controllers/equipment_controller.dart';
-import 'package:dronees/features/authorized/equipment/models/equipment.dart';
 import 'package:dronees/utils/constants/colors.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 
 class EquipmentScreen extends StatelessWidget {
   final EquipmentController controller = Get.put(EquipmentController());
@@ -106,19 +108,16 @@ class EquipmentScreen extends StatelessWidget {
           child: Row(
             children: [
               _buildStatDetail(
-                'Assigned',
-                controller.assignedEquipment.length.toString(),
+                'In Use',
+                controller.assignedEquipment.toString(),
               ),
               _buildVerticalDivider(),
               _buildStatDetail(
                 'Available',
-                controller.availableEquipment.length.toString(),
+                controller.availableEquipment.toString(),
               ),
               _buildVerticalDivider(),
-              _buildStatDetail(
-                'Total',
-                controller.equipmentList.length.toString(),
-              ),
+              _buildStatDetail('Total', controller.equipmentList.toString()),
             ],
           ),
         ),
@@ -164,7 +163,7 @@ class EquipmentScreen extends StatelessWidget {
 
   Widget _buildAssignedListSliver() {
     return Obx(() {
-      if (controller.assignedEquipment.isEmpty) {
+      if (controller.assignEquipmentList.isEmpty) {
         return SliverFillRemaining(
           hasScrollBody: false,
           child: _buildEmptyState(),
@@ -174,9 +173,9 @@ class EquipmentScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         sliver: SliverList(
           delegate: SliverChildBuilderDelegate((context, index) {
-            final equipment = controller.assignedEquipment[index];
+            final equipment = controller.assignEquipmentList[index];
             return _buildEnhancedEquipmentCard(context, equipment);
-          }, childCount: controller.assignedEquipment.length),
+          }, childCount: controller.assignEquipmentList.length),
         ),
       );
     });
@@ -184,171 +183,249 @@ class EquipmentScreen extends StatelessWidget {
 
   Widget _buildEnhancedEquipmentCard(
     BuildContext context,
-    Equipment equipment,
+    AssignEquipment equipment,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. Header with Name and Status
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-            child: Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. IMAGE SECTION WITH OVERLAYS
+            Stack(
               children: [
-                CircleAvatar(
-                  backgroundColor: TColors.primary.withOpacity(0.1),
-                  child: Icon(
-                    Icons.precision_manufacturing,
-                    color: TColors.primary,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    equipment.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
-                      color: Color(0xFF1E293B),
+                AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: CachedNetworkImage(
+                    imageUrl: equipment.assignPhoto,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Shimmer.fromColors(
+                      baseColor: Colors.grey[200]!,
+                      highlightColor: Colors.white,
+                      child: Container(color: Colors.white),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.grey[100],
+                      child: const Icon(
+                        Icons.image_not_supported_outlined,
+                        size: 40,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                 ),
-                _StatusChip(label: "Active", color: Colors.green),
+                // Gradient Overlay
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.2),
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.4),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Floating Status Chip
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: _buildGlassStatus("Active"),
+                ),
               ],
             ),
-          ),
 
-          // 2. Photo Section (If exists)
-          if (equipment.photoUrl != null)
+            // 2. CONTENT SECTION
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Stack(
-                  children: [
-                    Image.file(
-                      File(equipment.photoUrl!),
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                    // Gradient overlay to make it look premium
-                    Positioned.fill(
-                      child: Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.3),
-                            ],
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.precision_manufacturing,
+                          size: 20,
+                          color: Colors.blueAccent,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          equipment.equipmentName,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                            color: Color(0xFF0F172A),
                           ),
                         ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Info Grid (Date and Project)
+                  Row(
+                    children: [
+                      _buildInfoTile(
+                        Icons.calendar_today_outlined,
+                        "Date Assigned",
+                        DateFormat("dd MMM, yyyy").format(equipment.assignDate),
+                      ),
+                      const SizedBox(width: 16),
+                      _buildInfoTile(
+                        Icons.location_on_outlined,
+                        "Location",
+                        equipment.projectOrLocation,
+                      ),
+                    ],
+                  ),
+
+                  // 3. REMARK BOX
+                  if (equipment.assignRemark.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(16),
+                        border: const Border(
+                          left: BorderSide(color: Colors.blueAccent, width: 4),
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.format_quote_rounded,
+                            color: Colors.blueAccent.withOpacity(0.5),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              equipment.assignRemark,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.blueGrey[700],
+                                height: 1.4,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
-              ),
-            ),
 
-          // 3. Details & Remarks
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildDetailRow(
-                  Icons.calendar_today_rounded,
-                  "Assigned",
-                  equipment.assignedDate ?? 'N/A',
-                ),
-                const SizedBox(height: 8),
-                _buildDetailRow(
-                  Icons.rocket_launch_outlined,
-                  "Project",
-                  equipment.projectName ?? 'N/A',
-                ),
+                  const SizedBox(height: 24),
 
-                // THE REMARK BOX (Added back and styled)
-                if (equipment.remark != null &&
-                    equipment.remark!.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.amber.withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.sticky_note_2_outlined,
-                          size: 18,
-                          color: Colors.amber[900],
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            equipment.remark!,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.amber[900],
-                              fontStyle: FontStyle.italic,
-                            ),
+                  // 4. ACTION BUTTON
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showReturnBottomSheet(context, equipment),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.redAccent.withOpacity(0.2),
                           ),
+                          color: Colors.redAccent.withOpacity(0.05),
                         ),
-                      ],
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.assignment_return_outlined,
+                              size: 20,
+                              color: Colors.redAccent,
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              "Return to Inventory",
+                              style: TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                const SizedBox(height: 20),
+  // --- HELPER WIDGETS ---
 
-                // 4. Action Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _showReturnBottomSheet(context, equipment),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF1F5F9),
-                      foregroundColor: Colors.redAccent,
-                      elevation: 0,
-                      minimumSize: const Size(double.infinity, 48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.keyboard_return_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          "Return to Inventory",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
+  Widget _buildInfoTile(IconData icon, String label, String value) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: Colors.blueGrey[400]),
+              const SizedBox(width: 6),
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                  color: Colors.blueGrey[400],
                 ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF334155),
             ),
           ),
         ],
@@ -356,24 +433,24 @@ class EquipmentScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
-        const SizedBox(width: 8),
-        Text(
-          "$label: ",
-          style: TextStyle(color: Colors.grey[600], fontSize: 13),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF334155),
-            fontSize: 13,
+  Widget _buildGlassStatus(String label) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          color: Colors.white.withOpacity(0.2),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -402,7 +479,7 @@ class EquipmentScreen extends StatelessWidget {
     );
   }
 
-  void _showReturnBottomSheet(BuildContext context, Equipment equipment) {
+  void _showReturnBottomSheet(BuildContext context, AssignEquipment equipment) {
     final controller = Get.find<EquipmentController>();
 
     return CustomBlurBottomSheet.show(
@@ -411,6 +488,7 @@ class EquipmentScreen extends StatelessWidget {
         controller.returnImage.value = null;
         controller.returnRemarkController.clear();
       },
+      isDismissible: false,
       widget: SingleChildScrollView(
         child: Form(
           key: controller.returnFormKey,
@@ -434,13 +512,53 @@ class EquipmentScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                Text(
-                  "Return ${equipment.name}",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        "Return ${equipment.equipmentName}",
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        if (controller.isLoading.value) return;
+                        Get.back();
+                      },
+                      child: ClipOval(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(
+                            sigmaX: 10,
+                            sigmaY: 10,
+                          ), // Adjust blur intensity here
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              // The color must be semi-transparent for the blur to be visible
+                              color: Colors.grey.withOpacity(0.2),
+                              border: Border.all(
+                                color: Colors.grey.withOpacity(0.3),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.black,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+
                 const Text(
                   "Please record the condition of the gear before returning.",
                   style: TextStyle(fontSize: 13, color: Colors.grey),
@@ -485,7 +603,7 @@ class EquipmentScreen extends StatelessWidget {
                   title: "Equipment Return Photo",
                   subTitle: "Take a photo of the equipment condition now",
                   onPick: controller.pickReturnImage,
-                  initialValue: controller.selectedImage.value,
+                  initialValue: controller.returnImage.value,
                   validator: (value) =>
                       TValidator.validateNull(value, "Please Provide a Image"),
                 ),
@@ -525,27 +643,3 @@ class EquipmentScreen extends StatelessWidget {
 }
 
 // Helper Components
-class _StatusChip extends StatelessWidget {
-  final String label;
-  final Color color;
-  const _StatusChip({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-}

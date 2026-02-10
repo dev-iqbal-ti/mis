@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:dronees/features/authorized/travel_allowance/controllers/allowance_list_record_controller.dart';
+import 'package:dronees/features/authorized/travel_allowance/models/ta_status.dart';
 import 'package:dronees/features/authorized/travel_allowance/models/travel_allowance_model.dart';
 import 'package:dronees/features/authorized/travel_allowance/models/travel_allowance_stats.dart';
 import 'package:dronees/utils/http/api.dart';
 import 'package:dronees/utils/http/http_client.dart';
+import 'package:dronees/utils/logging/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -26,6 +29,8 @@ class TravelAllowanceController extends GetxController {
   RxString selectedStatus = RxString('Pending');
   final ScrollController scrollController = ScrollController();
 
+  TextEditingController remarkController = TextEditingController();
+
   // Summary counts
   RxInt pendingCount = RxInt(0);
   RxInt approvedCount = RxInt(0);
@@ -45,6 +50,7 @@ class TravelAllowanceController extends GetxController {
   @override
   void onClose() {
     scrollController.dispose();
+    remarkController.dispose();
     super.onClose();
   }
 
@@ -66,10 +72,10 @@ class TravelAllowanceController extends GetxController {
     }
 
     isLoading.value = true;
+    final url =
+        '${API.getApis.getTravelAllowance}?limit=$limit&page=${currentPage.value}&status=$_getStatusQuery';
 
-    final response = await THttpHelper.getRequest(
-      '${API.getApis.getTravelAllowance}?limit=$limit&page=${currentPage.value}&status=$_getStatusQuery',
-    );
+    final response = await THttpHelper.getRequest(url);
 
     isLoading.value = false;
 
@@ -200,17 +206,49 @@ class TravelAllowanceController extends GetxController {
 
   Future<void> approveTAReqast(int taId) async {
     isLoading.value = true;
-    final response = await THttpHelper.postRequest(
-      API.postApis.approveTAByDepartment,
-      {"id": taId},
-    );
+    final response = await THttpHelper.postRequest(API.postApis.approveTA, {
+      "id": taId,
+      "by": TAStatus.approvedByDepartment,
+    });
 
     if (response == null) {
       isLoading.value = false;
       return;
     }
-    await TravelAllowanceController.instance.refreshAllowances();
+    await AllowanceListRecordController.instance.refreshAllowances();
     isLoading.value = false;
+    Get.back();
+  }
+
+  Future<void> initializeTAReqast(int taId) async {
+    isLoading.value = true;
+    final response = await THttpHelper.postRequest(API.postApis.approveTA, {
+      "id": taId,
+      "by": TAStatus.approvedByFinance,
+    });
+    if (response == null) {
+      isLoading.value = false;
+      return;
+    }
+    await AllowanceListRecordController.instance.refreshAllowances();
+    isLoading.value = false;
+    Get.back();
+  }
+
+  Future rejectTAReqast(int taId) async {
+    isLoading.value = true;
+    final response = await THttpHelper.postRequest(API.postApis.rejectTA, {
+      "id": taId,
+      "remark": remarkController.text.isEmpty ? null : remarkController.text,
+    });
+    if (response == null) {
+      isLoading.value = false;
+      return;
+    }
+    remarkController.clear();
+    await AllowanceListRecordController.instance.refreshAllowances();
+    isLoading.value = false;
+    Get.back();
     Get.back();
   }
 }

@@ -1,155 +1,23 @@
-// import 'package:dronees/features/authorized/gallery/models/gallery_item.dart';
-// import 'package:dronees/features/authorized/gallery/screens/image_details_screen.dart';
-// import 'package:dronees/utils/constants/sizes.dart';
-// import 'package:dronees/utils/device/device_utility.dart';
-// import 'package:flutter/cupertino.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-// // Ensure you import the file where your data models are defined above
-
-// class GalleryScreen extends StatefulWidget {
-//   const GalleryScreen({super.key});
-
-//   @override
-//   State<GalleryScreen> createState() => _GalleryScreenState();
-// }
-
-// class _GalleryScreenState extends State<GalleryScreen> {
-//   late Map<String, List<GalleryItem>> groupedData;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     // Initialize and group the data
-//     groupedData = groupItemsByDate(mockGalleryItems);
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.white,
-//       appBar: AppBar(
-//         backgroundColor: Colors.white,
-//         elevation: 0,
-//         title: const Text("Photos", style: TextStyle(color: Colors.black)),
-//         actions: [
-//           IconButton(
-//             onPressed: () {},
-//             icon: const Icon(Icons.more_horiz, color: Colors.black),
-//           ),
-//         ],
-//       ),
-//       // CustomScrollView is necessary for mixing different sliver types
-//       body: CustomScrollView(slivers: _buildSlivers()),
-//     );
-//   }
-
-//   List<Widget> _buildSlivers() {
-//     List<Widget> slivers = [];
-
-//     // Iterate through the grouped data map
-//     groupedData.forEach((dateHeader, items) {
-//       // 1. Add the Date Header Sliver
-//       slivers.add(
-//         SliverToBoxAdapter(
-//           child: Padding(
-//             padding: const EdgeInsets.all(16.0),
-//             child: Text(
-//               dateHeader,
-//               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//             ),
-//           ),
-//         ),
-//       );
-
-//       // 2. Add the Staggered Grid Sliver for this section's items
-//       slivers.add(
-//         SliverPadding(
-//           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-//           sliver: SliverMasonryGrid.count(
-//             crossAxisCount: 3, // Adjust number of columns
-//             mainAxisSpacing: 4,
-//             crossAxisSpacing: 4,
-//             childCount: items.length,
-//             itemBuilder: (context, index) {
-//               final item = items[index];
-//               return GestureDetector(
-//                 onTap: () {
-//                   // Navigate to detail screen
-//                   Navigator.push(
-//                     context,
-//                     MaterialPageRoute(
-//                       builder: (context) => ImageDetailScreen(
-//                         selectedItem: item,
-//                         allItems:
-//                             mockGalleryItems, // Pass all for thumbnail strip
-//                       ),
-//                     ),
-//                   );
-//                 },
-//                 // Hero widget for smooth transition animation
-//                 child: Hero(
-//                   tag: item.id,
-//                   child: ClipRRect(
-//                     borderRadius: BorderRadius.circular(8),
-//                     child: Image.network(
-//                       item.imageUrl,
-//                       fit: BoxFit.cover,
-//                       // Using aspect ratio controller to define staggered height
-//                     ),
-//                   ),
-//                 ),
-//               );
-//             },
-//           ),
-//         ),
-//       );
-//     });
-
-//     // Add bottom spacing equal to bottom button height + padding
-//     slivers.add(
-//       SliverToBoxAdapter(
-//         child: SizedBox(
-//           height:
-//               TDeviceUtils.getBottomNavigationBarHeight(), // spacing + button height + padding
-//         ),
-//       ),
-//     );
-
-//     return slivers;
-//   }
-// }
-
 import 'dart:io';
 
-import 'package:dronees/features/authorized/gallery/models/gallery_item.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dronees/features/authorized/gallery/controllers/gallery_controller.dart';
 import 'package:dronees/features/authorized/gallery/screens/image_details_screen.dart';
+import 'package:dronees/features/authorized/gallery/screens/upload_image_screen.dart';
 import 'package:dronees/utils/constants/sizes.dart';
-import 'package:dronees/utils/device/device_utility.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:get/get.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:shimmer/shimmer.dart';
 
-class GalleryScreen extends StatefulWidget {
+class GalleryScreen extends StatelessWidget {
   const GalleryScreen({super.key});
 
   @override
-  State<GalleryScreen> createState() => _GalleryScreenState();
-}
-
-class _GalleryScreenState extends State<GalleryScreen> {
-  late Map<String, List<GalleryItem>> groupedData;
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize and group the data
-    groupedData = groupItemsByDate(mockGalleryItems);
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final GalleryController controller = Get.put(GalleryController());
+
     return Scaffold(
       backgroundColor: const Color(0xFF6C5CE7),
       body: SafeArea(
@@ -203,7 +71,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
               ),
             ),
 
-            // Content Section
+            // Content Section with Pull-to-Refresh
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.only(
@@ -212,22 +80,36 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 ),
                 child: Container(
                   color: const Color(0xFFF5F6FA),
-                  child: CustomScrollView(
-                    physics: ClampingScrollPhysics(),
-                    slivers: _buildSlivers(),
-                  ),
+                  child: Obx(() {
+                    if (controller.isLoading.value &&
+                        controller.allItems.isEmpty) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF6C5CE7),
+                        ),
+                      );
+                    }
+
+                    return RefreshIndicator(
+                      color: const Color(0xFF6C5CE7),
+                      onRefresh: controller.refreshGalleryItems,
+                      child: CustomScrollView(
+                        controller: controller.scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: _buildSlivers(controller),
+                      ),
+                    );
+                  }),
                 ),
               ),
             ),
-
-            // Bottom Button (inside SafeArea now)
           ],
         ),
       ),
       floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
       floatingActionButton: ElevatedButton(
         onPressed: () {
-          // Get.to(() => SubmitTravelAllowance());
+          Get.to(() => const UploadImageScreen());
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF6C5CE7),
@@ -240,16 +122,17 @@ class _GalleryScreenState extends State<GalleryScreen> {
             borderRadius: BorderRadius.circular(30),
           ),
         ),
-        child: Icon(Iconsax.gallery_export, size: 30),
+        child: const Icon(Iconsax.gallery_export, size: 30),
       ),
     );
   }
 
-  List<Widget> _buildSlivers() {
+  List<Widget> _buildSlivers(GalleryController controller) {
     List<Widget> slivers = [];
 
     // Check if empty
-    if (groupedData.isEmpty) {
+    if (controller.groupedItems.value == null ||
+        controller.groupedItems.value!.isEmpty) {
       slivers.add(
         SliverFillRemaining(
           child: Center(
@@ -280,7 +163,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     }
 
     // Iterate through the grouped data map
-    groupedData.forEach((dateHeader, items) {
+    controller.groupedItems.value!.forEach((dateHeader, items) {
       // 1. Add the Date Header Sliver
       slivers.add(
         SliverToBoxAdapter(
@@ -316,7 +199,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                     MaterialPageRoute(
                       builder: (context) => ImageDetailScreen(
                         selectedItem: item,
-                        allItems: mockGalleryItems,
+                        allItems: items,
                       ),
                     ),
                   );
@@ -325,35 +208,44 @@ class _GalleryScreenState extends State<GalleryScreen> {
                   tag: item.id,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      item.imageUrl,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: Colors.grey.shade200,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                  : null,
-                              strokeWidth: 2,
-                              color: const Color(0xFF6C5CE7),
+                    child: CachedNetworkImage(
+                      imageUrl: item.thumbnailUrl,
+                      progressIndicatorBuilder:
+                          (context, url, downloadProgress) =>
+                              Shimmer.fromColors(
+                                baseColor: Colors.grey[300]!,
+                                highlightColor: Colors.grey[100]!,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                      errorWidget: (context, url, error) => Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.image_not_supported_outlined,
+                              color: Colors.grey[400],
+                              size: 30,
                             ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey.shade200,
-                          child: Icon(
-                            Iconsax.gallery_slash,
-                            color: Colors.grey.shade400,
-                            size: 24,
-                          ),
-                        );
-                      },
+                            const SizedBox(height: 4),
+                            Text(
+                              "Unavailable",
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -364,14 +256,30 @@ class _GalleryScreenState extends State<GalleryScreen> {
       );
     });
 
+    // Add loading indicator at bottom when loading more
+    if (controller.isLoadingMore.value) {
+      slivers.add(
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF6C5CE7),
+                strokeWidth: 2,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     // Add bottom spacing for better scroll experience
     slivers.add(
-      SliverToBoxAdapter(
-        child: SizedBox(
-          height: 16, // spacing + button height + padding
-        ),
+      const SliverToBoxAdapter(
+        child: SizedBox(height: 80), // spacing + button height + padding
       ),
     );
+
     return slivers;
   }
 }

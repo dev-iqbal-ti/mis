@@ -1,43 +1,41 @@
-class Equipment {
-  final String id;
-  final String name;
-  final bool isAssigned;
-  final String? assignedTo;
-  final String? assignedDate;
-  final String? projectName;
-  final String? remark;
-  final String? photoUrl;
+import 'dart:convert';
 
-  Equipment({
+List<EquipmentModel> equipmentModelFromJson(String str) =>
+    List<EquipmentModel>.from(
+      json.decode(str).map((x) => EquipmentModel.fromJson(x)),
+    );
+
+String equipmentModelToJson(List<EquipmentModel> data) =>
+    json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
+
+class EquipmentModel {
+  final int id;
+  final String name;
+  final int? assignedTo;
+  final DateTime createdAt;
+  final String? assignedName;
+
+  EquipmentModel({
     required this.id,
     required this.name,
-    this.isAssigned = false,
-    this.assignedTo,
-    this.assignedDate,
-    this.projectName,
-    this.remark,
-    this.photoUrl,
+    required this.assignedTo,
+    required this.createdAt,
+    required this.assignedName,
   });
 
-  Equipment copyWith({
-    String? id,
-    String? name,
-    bool? isAssigned,
-    String? assignedTo,
-    String? assignedDate,
-    String? projectName,
-    String? remark,
-    String? photoUrl,
-  }) {
-    return Equipment(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      isAssigned: isAssigned ?? this.isAssigned,
-      assignedTo: assignedTo ?? this.assignedTo,
-      assignedDate: assignedDate ?? this.assignedDate,
-      projectName: projectName ?? this.projectName,
-      remark: remark ?? this.remark,
-      photoUrl: photoUrl ?? this.photoUrl,
-    );
-  }
+  factory EquipmentModel.fromJson(Map<String, dynamic> json) => EquipmentModel(
+    id: json["id"],
+    name: json["name"],
+    assignedTo: json["assigned_to"],
+    createdAt: DateTime.parse(json["created_at"]),
+    assignedName: json["assigned_name"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "id": id,
+    "name": name,
+    "assigned_to": assignedTo,
+    "created_at": createdAt.toIso8601String(),
+    "assigned_name": assignedName,
+  };
 }

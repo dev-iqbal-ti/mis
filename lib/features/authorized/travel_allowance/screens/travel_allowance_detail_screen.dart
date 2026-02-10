@@ -3,7 +3,9 @@ import 'dart:developer';
 import 'package:dronees/controllers/auth_controller.dart';
 import 'package:dronees/features/authorized/travel_allowance/controllers/submit_travel_allowance_controller.dart';
 import 'package:dronees/features/authorized/travel_allowance/controllers/travel_allowsnce_controller.dart';
+import 'package:dronees/features/authorized/travel_allowance/models/ta_status.dart';
 import 'package:dronees/features/authorized/travel_allowance/models/travel_allowance_model.dart';
+import 'package:dronees/models/user_model.dart';
 import 'package:dronees/utils/constants/image_strings.dart';
 import 'package:dronees/widgets/confirm_sheet.dart';
 import 'package:dronees/widgets/custom_blur_bottom_sheet.dart';
@@ -43,8 +45,11 @@ class TravelAllowanceDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Logic for Role and Ownership
     // Note: Replace 'role' with your actual key (e.g., .roleName or .roleId)
-    final currentUser = AuthController.instance.authUser?.userDetails;
-    final String userRole = "manager"; // e.g., "manager" or "finance"
+    final String userRole = AuthController
+        .instance
+        .authUser!
+        .userDetails
+        .rolesDisplayNames; // e.g., "manager" or "finance"
     final controller = TravelAllowanceController.instance;
 
     return Scaffold(
@@ -116,9 +121,11 @@ class TravelAllowanceDetailScreen extends StatelessWidget {
         ),
       ),
       // STICKY ACTION BUTTONS
-      bottomNavigationBar: data.status == "Rejected"
+      bottomNavigationBar:
+          (data.status == TAStatus.rejected ||
+              data.status == TAStatus.approvedByFinance)
           ? null
-          : isOwner && data.status != "Pending"
+          : isOwner && data.status != TAStatus.pending
           ? null
           : _buildEnhancedActions(
               context,
@@ -126,6 +133,7 @@ class TravelAllowanceDetailScreen extends StatelessWidget {
               controller,
               isOwner,
               userRole,
+              data.status,
             ),
     );
   }
@@ -136,8 +144,8 @@ class TravelAllowanceDetailScreen extends StatelessWidget {
     TravelAllowanceController controller,
     bool isOwner,
     String role,
+    String status,
   ) {
-    log(taId.toString());
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
       decoration: BoxDecoration(
@@ -152,7 +160,7 @@ class TravelAllowanceDetailScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          if (isOwner)
+          if (isOwner && status == TAStatus.pending)
             Expanded(
               child: _gradientButton(
                 "Delete Request",
@@ -177,14 +185,14 @@ class TravelAllowanceDetailScreen extends StatelessWidget {
                 },
               ),
             )
-          else if (role == 'manager') ...[
+          else if (role == UserRole.manager) ...[
             Expanded(
               child: _outlineButton(
                 "Reject",
                 Colors.red,
                 () => CustomBlurBottomSheet.show(
                   context,
-                  widget: _showRejectSheet(context),
+                  widget: _showRejectSheet(context, controller, taId),
                 ),
               ),
             ),
@@ -213,14 +221,14 @@ class TravelAllowanceDetailScreen extends StatelessWidget {
                 },
               ),
             ),
-          ] else if (role == 'finance') ...[
+          ] else if (role == UserRole.finance) ...[
             Expanded(
               child: _outlineButton(
                 "Reject",
                 Colors.red,
                 () => CustomBlurBottomSheet.show(
                   context,
-                  widget: _showRejectSheet(context),
+                  widget: _showRejectSheet(context, controller, taId),
                 ),
               ),
             ),
@@ -229,9 +237,24 @@ class TravelAllowanceDetailScreen extends StatelessWidget {
               child: _gradientButton(
                 "Initialize",
                 [Colors.blueAccent, Colors.indigo.shade900],
-                Icons.account_balance_wallet_outlined,
+                Iconsax.money_send_copy,
                 controller.isLoading,
-                () {},
+                () {
+                  CustomBlurBottomSheet.show(
+                    context,
+                    widget: ConfirmSheet(
+                      title: "Initialize Request?",
+                      description:
+                          "Are you sure you want to initialize this TA request? This action cannot be reversed.",
+                      confirmText: "Yes, initialize",
+                      themeColor: Colors.blueAccent,
+                      icon: Iconsax.money_send_copy,
+                      onConfirm: () {
+                        controller.initializeTAReqast(taId);
+                      },
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -240,79 +263,152 @@ class TravelAllowanceDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _showRejectSheet(BuildContext context) {
-    return Padding(
+  Widget _showRejectSheet(
+    BuildContext context,
+    TravelAllowanceController controller,
+    int taId,
+  ) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom, // Keyboard padding
-        left: 20,
-        right: 20,
-        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        left: 24,
+        right: 24,
+        top: 12,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1. Drag Handle
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+
+          // 2. Header Section
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "Rejection Remarks",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.report_problem_rounded,
+                  color: Colors.red,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  "Rejection Remarks",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
               ),
               IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close),
+                icon: const Icon(
+                  Icons.close_fullscreen_rounded,
+                  size: 20,
+                  color: Colors.grey,
+                ),
               ),
             ],
           ),
-          const Text(
-            "Please provide a reason for rejecting this request.",
-            style: TextStyle(color: Colors.grey),
+          const SizedBox(height: 8),
+          Text(
+            "Provide a brief explanation for rejecting this request to help the requester understand.",
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+              height: 1.4,
+            ),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 24),
+
+          // 3. Styled TextField
           TextField(
-            // controller: _remarkController,
-            maxLines: 3,
+            controller: controller.remarkController,
+            maxLines: 4,
+            maxLength: 250, // Added character limit
+            style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
-              hintText: "Enter reason here...",
+              hintText: "E.g., Missing documents, incorrect dates...",
+              hintStyle: TextStyle(color: Colors.grey[400]),
               filled: true,
-              fillColor: Colors.grey[100],
+              fillColor: Colors.grey[50],
+              contentPadding: const EdgeInsets.all(16),
+              counterStyle: const TextStyle(color: Colors.grey),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Colors.grey[200]!),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Colors.grey[200]!),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.red),
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: Colors.red, width: 1.5),
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () {
-                // BRO: Call your Reject API here using _remarkController.text
-                // print("Rejected with: ${_remarkController.text}");
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          const SizedBox(height: 16),
+
+          // 4. Action Button with State
+          Obx(
+            () => SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: controller.isLoading.value
+                    ? null
+                    : () => controller.rejectTAReqast(taId),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[600],
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  disabledBackgroundColor: Colors.red[100],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
-              ),
-              child: const Text(
-                "Confirm Rejection",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                child: controller.isLoading.value
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : const Text(
+                        "Confirm Rejection",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
           ),
-          const SizedBox(height: 20),
         ],
       ),
     );
