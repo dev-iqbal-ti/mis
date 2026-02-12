@@ -1,6 +1,7 @@
 import 'package:dronees/features/authorized/attendance/screens/attendance_screen.dart';
 import 'package:dronees/features/authorized/gallery/screens/gallery_screen.dart';
 import 'package:dronees/features/authorized/home/screens/home_screen.dart';
+import 'package:dronees/features/authorized/leave/screens/leave_summary_screen.dart';
 import 'package:dronees/features/authorized/profile/screens/profile_screens.dart';
 import 'package:dronees/features/authorized/travel_allowance/screens/travel_allowance_summary.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +14,8 @@ class BottomNavigator extends StatelessWidget {
   // Define your pages here
   final List<Widget> pages = [
     HomeScreen(),
-    AttendanceScreen(),
+    // AttendanceScreen(),
+    LeaveSummaryScreen(),
     TravelAllowanceSummary(),
     GalleryScreen(),
     ProfileScreen(),

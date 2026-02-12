@@ -11,6 +11,9 @@ Widget inputField({
 }) {
   return TextFormField(
     controller: controller,
+    onTapOutside: (PointerDownEvent event) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    },
     autovalidateMode: AutovalidateMode.onUserInteraction,
     validator: validator,
     obscureText: obscure,

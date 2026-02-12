@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dronees/features/authorized/money_receive/controllers/money_receive_controller.dart';
+import 'package:dronees/features/authorized/money_receive/models/payment_received_model.dart';
 import 'package:dronees/features/authorized/money_receive/models/projects_model.dart';
 import 'package:dronees/utils/helpers/image_picker_helper.dart';
 import 'package:dronees/utils/http/api.dart';
 import 'package:dronees/utils/http/http_client.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:image_picker/image_picker.dart';
 
 class SubmitMoneyReceivedController extends GetxController {
@@ -20,14 +21,19 @@ class SubmitMoneyReceivedController extends GetxController {
   final amountController = TextEditingController();
   final remarkController = TextEditingController();
 
-  // Errors for custom fields
-  var showProjectError = false.obs;
-  var showImageError = false.obs;
+  var isLoading = false.obs;
 
   @override
   void onInit() {
     super.onInit();
     _fetchProjects();
+  }
+
+  @override
+  void onClose() {
+    super.onClose();
+    amountController.dispose();
+    remarkController.dispose();
   }
 
   Future<void> _fetchProjects() async {
@@ -39,7 +45,27 @@ class SubmitMoneyReceivedController extends GetxController {
     projects.value = projectsModelFromJson(jsonEncode(response["data"]));
   }
 
-  void addRecord() {}
+  void submitPaymentRecord() async {
+    isLoading.value = true;
+    final data = <String, dynamic>{
+      "project_id": selectedProject.value?.id,
+      "amount": amountController.text,
+      "method": selectedMode.value,
+      "remark": remarkController.text,
+    };
+
+    final response = await THttpHelper.formDataRequest(
+      API.postApis.submitMoneyReceived,
+      selectedImage.value,
+      data,
+    );
+    isLoading.value = false;
+    if (response == null) return;
+    final dataReceived = PaymentReceivedModel.fromJson(response["data"]);
+    MoneyReceiveController.instance.addRecord(dataReceived);
+    _resetForm();
+    Get.back();
+  }
 
   void _resetForm() {
     selectedProject.value = null;

@@ -195,6 +195,9 @@ class SubmitLeaveScreen extends StatelessWidget {
                     _buildFieldLabel("Leave Purpose"),
                     const SizedBox(height: 6),
                     TextFormField(
+                      onTapOutside: (PointerDownEvent event) {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                      },
                       controller: controller.purposeController,
                       validator: TValidator.leavePurposeValidator,
                       autovalidateMode: AutovalidateMode.onUserInteraction,

@@ -1,13 +1,19 @@
+import 'dart:developer';
+
 import 'package:dronees/features/authorized/money_receive/controllers/submit_money_received_controller.dart';
 import 'package:dronees/features/authorized/money_receive/models/projects_model.dart';
+import 'package:dronees/utils/constants/colors.dart';
 import 'package:dronees/utils/constants/image_strings.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 
 import 'package:dronees/utils/validators/validation.dart';
+import 'package:dronees/widgets/confirm_sheet.dart';
+import 'package:dronees/widgets/custom_blur_bottom_sheet.dart';
 import 'package:dronees/widgets/custom_bottom_sheet_dropdown.dart';
 import 'package:dronees/widgets/custom_file_picker.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
@@ -89,6 +95,9 @@ class AddMoneyReceiveScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           TextFormField(
+                            onTapOutside: (PointerDownEvent event) {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                            },
                             controller: controller.amountController,
                             keyboardType: TextInputType.number,
                             autovalidateMode:
@@ -138,6 +147,9 @@ class AddMoneyReceiveScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           TextFormField(
+                            onTapOutside: (PointerDownEvent event) {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                            },
                             controller: controller.remarkController,
                             validator: (value) =>
                                 TValidator.emptyValidator(value, "Remark"),
@@ -173,7 +185,7 @@ class AddMoneyReceiveScreen extends StatelessWidget {
               ),
             ),
           ),
-          _buildBottomButton(controller),
+          _buildBottomButton(context, controller),
         ],
       ),
     );
@@ -198,28 +210,53 @@ class AddMoneyReceiveScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomButton(SubmitMoneyReceivedController controller) {
+  Widget _buildBottomButton(
+    BuildContext context,
+    SubmitMoneyReceivedController controller,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(TSizes.defaultPadding),
       color: Colors.white,
       child: SafeArea(
         child: SizedBox(
           width: double.infinity,
           height: 56,
-          child: ElevatedButton(
-            onPressed: controller.addRecord,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C5CE7),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+          child: Obx(
+            () => ElevatedButton(
+              onPressed: () {
+                if (controller.isLoading.value) return;
+                if (controller.paymentFormKey.currentState!.validate()) {
+                  CustomBlurBottomSheet.show(
+                    context,
+                    widget: ConfirmSheet(
+                      title: "Submit Payment",
+                      description:
+                          "Double-check your payment details to ensure everything is correct. Do you want to proceed?",
+                      onConfirm: controller.submitPaymentRecord,
+                      confirmText: "Yes Sumbit",
+                      themeColor: TColors.othersColor,
+                      icon: Iconsax.money_add_copy,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6C5CE7),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
-            ),
-            child: const Text(
-              "Submit Payment Report",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+              child: controller.isLoading.value
+                  ? const CupertinoActivityIndicator(color: TColors.white)
+                  : const Text(
+                      "Submit Payment Report",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                        fontSize: 16,
+                      ),
+                    ),
             ),
           ),
         ),

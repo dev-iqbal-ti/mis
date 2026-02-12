@@ -48,6 +48,35 @@ class THttpHelper {
     }
   }
 
+  // Helper method to make a PUT request
+  static Future<Map<String, dynamic>?> putRequest(
+    String endpoint, {
+    Map<String, dynamic>? body,
+    Map<String, dynamic>? queryParams,
+    bool showError = true,
+  }) async {
+    TLoggerHelper.customPrint(_baseUrl);
+    TLoggerHelper.customPrint("In PUT request $endpoint");
+
+    try {
+      final uri = Uri.parse(
+        '$_baseUrl$endpoint',
+      ).replace(queryParameters: queryParams);
+
+      final response = await http.put(
+        uri,
+        headers: headers,
+        body: body != null ? jsonEncode(body) : null,
+      );
+
+      return _handleResponse(response, endpoint, showError);
+    } catch (e) {
+      log(e.toString());
+      TLoaders.errorSnackBar(title: "Error", message: "Something went wrong");
+      return null;
+    }
+  }
+
   // Helper method to make a POST request
   static Future<Map<String, dynamic>?> postRequest(
     String endpoint,
@@ -270,14 +299,9 @@ class THttpHelper {
   static void _showErrorToast(String body, String? endpoint, bool showError) {
     final Map<String, dynamic> data = jsonDecode(body);
     TLoggerHelper.customPrint(data, endpoint);
-    if (!showError &&
-        data['error'] == "Authentication Failed! User doesn't exist!") {
-      return;
-    }
-    String? message = data["error"];
-    TLoaders.errorSnackBar(
-      title: "Error",
-      message: message ?? "Something went wrong",
-    );
+
+    String? message =
+        data["error"] ?? data["message"] ?? "Something went wrong";
+    TLoaders.errorSnackBar(title: "Error", message: message);
   }
 }

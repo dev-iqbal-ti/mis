@@ -186,6 +186,9 @@ class AssignEquipmentScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           TextFormField(
+                            onTapOutside: (PointerDownEvent event) {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                            },
                             controller: controller.projectNameController,
                             validator: (value) => TValidator.emptyValidator(
                               value,
@@ -208,6 +211,9 @@ class AssignEquipmentScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           TextFormField(
+                            onTapOutside: (PointerDownEvent event) {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                            },
                             controller: controller.remarkController,
                             validator: (value) =>
                                 TValidator.emptyValidator(value, "Remark"),

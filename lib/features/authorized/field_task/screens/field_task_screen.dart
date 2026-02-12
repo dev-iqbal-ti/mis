@@ -1,9 +1,11 @@
 import 'package:dronees/features/authorized/field_task/controllers/field_task_controller.dart';
+import 'package:dronees/models/employees_model.dart';
 import 'package:dronees/utils/constants/colors.dart';
 import 'package:dronees/utils/constants/image_strings.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:dronees/utils/constants/text_strings.dart';
 import 'package:dronees/utils/validators/validation.dart';
+import 'package:dronees/widgets/custom_blur_bottom_sheet.dart';
 import 'package:dronees/widgets/custom_bottom_sheet_dropdown.dart';
 import 'package:dronees/widgets/submit_confirmation.dart';
 import 'package:flutter/material.dart';
@@ -57,6 +59,9 @@ class FieldTaskScreen extends StatelessWidget {
                         children: [
                           _buildLabel("Client Name"),
                           TextFormField(
+                            onTapOutside: (PointerDownEvent event) {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                            },
                             controller: controller.clientNameController,
                             autovalidateMode:
                                 AutovalidateMode.onUserInteraction,
@@ -123,14 +128,14 @@ class FieldTaskScreen extends StatelessWidget {
                           const SizedBox(height: TSizes.spaceBtwItems),
 
                           _buildLabel("Team Members"),
-                          FormField<List<String>>(
-                            initialValue: controller.selectedTeamMembers,
+                          FormField<List<Employees>>(
+                            initialValue: controller.selectedTeamMembersList,
                             // validator: TValidator.validateTeamMember,
                             // autovalidateMode: AutovalidateMode.onUserInteraction,
                             // onSaved: (newValue) {
                             //   controller.selectedTeamMembers.value = newValue ?? [];
                             // },
-                            builder: (FormFieldState<List<String>> field) {
+                            builder: (FormFieldState<List<Employees>> field) {
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -169,7 +174,7 @@ class FieldTaskScreen extends StatelessWidget {
                                                   .map(
                                                     (e) => Chip(
                                                       label: Text(
-                                                        e,
+                                                        e.name,
                                                         style: const TextStyle(
                                                           fontSize: 12,
                                                         ),
@@ -182,6 +187,7 @@ class FieldTaskScreen extends StatelessWidget {
                                                           controller
                                                               .toggleTeamMember(
                                                                 e,
+                                                                field,
                                                               ),
                                                       backgroundColor: TColors
                                                           .primary
@@ -214,6 +220,9 @@ class FieldTaskScreen extends StatelessWidget {
 
                           _buildLabel("Geo Location (Auto-detected)"),
                           TextFormField(
+                            onTapOutside: (PointerDownEvent event) {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                            },
                             controller: controller.locationController,
                             readOnly: true,
                             style: const TextStyle(
@@ -267,15 +276,16 @@ class FieldTaskScreen extends StatelessWidget {
   void _showMultiSelectSheet(
     BuildContext context,
     FieldTaskController controller,
-    FormFieldState<List<String>> field,
+    FormFieldState<List<Employees>> field,
   ) {
-    final searchQuery = "".obs;
-    final filteredItems = <String>[].obs;
-    filteredItems.assignAll(controller.teamMembers);
+    if (controller.teamMembers.isEmpty) {
+      controller.getTeamMembers();
+    }
+    // filteredItems.assignAll(controller.teamMembers);
 
-    Get.bottomSheet(
-      isScrollControlled: true,
-      Container(
+    CustomBlurBottomSheet.show(
+      context,
+      widget: Container(
         padding: const EdgeInsets.all(20),
         constraints: BoxConstraints(maxHeight: Get.height * 0.7),
         decoration: const BoxDecoration(
@@ -290,12 +300,9 @@ class FieldTaskScreen extends StatelessWidget {
             ),
             const SizedBox(height: 15),
             TextField(
+              controller: controller.searchController,
               onChanged: (val) {
-                filteredItems.assignAll(
-                  controller.teamMembers
-                      .where((m) => m.toLowerCase().contains(val.toLowerCase()))
-                      .toList(),
-                );
+                controller.searchTeamMembers(val);
               },
               decoration: InputDecoration(
                 hintText: "Search team...",
@@ -312,15 +319,22 @@ class FieldTaskScreen extends StatelessWidget {
             Expanded(
               child: Obx(
                 () => ListView.builder(
-                  itemCount: filteredItems.length,
+                  itemCount: controller.teamMembers.length,
                   itemBuilder: (context, index) {
-                    final member = filteredItems[index];
+                    final member = controller.teamMembers[index];
                     return Obx(
                       () => CheckboxListTile(
-                        title: Text(member),
-                        value: controller.selectedTeamMembers.contains(member),
+                        selected: controller.selectedTeamMembersList.any(
+                          (e) => e.id == member.id,
+                        ),
+
+                        title: Text(member.name),
+                        value: controller.selectedTeamMembersList.any(
+                          (e) => e.id == member.id,
+                        ),
                         activeColor: TColors.primary,
-                        onChanged: (_) => controller.toggleTeamMember(member),
+                        onChanged: (_) =>
+                            controller.toggleTeamMember(member, field),
                       ),
                     );
                   },
@@ -329,7 +343,7 @@ class FieldTaskScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                field.didChange(controller.selectedTeamMembers);
+                field.didChange(controller.selectedTeamMembersList);
                 Get.back();
               },
               style: ElevatedButton.styleFrom(

@@ -1,74 +1,129 @@
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:dronees/features/authorized/money_receive/models/money_record.dart';
+import 'package:dronees/controllers/auth_controller.dart';
+import 'package:dronees/features/authorized/money_receive/models/payment_received_model.dart';
 import 'package:dronees/utils/helpers/image_picker_helper.dart';
+import 'package:dronees/utils/http/api.dart';
+import 'package:dronees/utils/http/http_client.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 class MoneyReceiveController extends GetxController {
-  final paymentFormKey = GlobalKey<FormState>();
+  static MoneyReceiveController get instance => Get.find();
 
-  // Observables
-  var receipts = <MoneyRecord>[].obs;
-  var selectedProject = Rxn<String>();
-  var selectedMode = Rxn<String>();
-  var selectedImage = Rx<File?>(null);
+  final ScrollController scrollController = ScrollController();
 
-  final amountController = TextEditingController();
-  final remarkController = TextEditingController();
+  Rx<double> collection = Rx<double>(0.0);
+  RxList<PaymentReceivedModel> moneyRecord = RxList<PaymentReceivedModel>();
 
-  // Errors for custom fields
-  var showProjectError = false.obs;
-  var showImageError = false.obs;
+  var isLoading = false.obs;
+  var isMoreLoading = false.obs; // For the bottom loader
+  int currentPage = 1;
+  bool canLoadMore = true;
 
-  double get totalCollected =>
-      receipts.fold(0, (sum, item) => sum + double.parse(item.amount));
+  @override
+  void onInit() {
+    super.onInit();
+    _fetchTotalCollection();
+    _fetchMoneyRecord(); // Initial load
 
-  void addRecord() {
-    final isValid = paymentFormKey.currentState?.validate() ?? false;
-    showProjectError.value = selectedProject.value == null;
-    showImageError.value = selectedImage.value == null;
+    // Listen to scroll events
+    scrollController.addListener(() {
+      if (scrollController.position.pixels >=
+          scrollController.position.maxScrollExtent - 200) {
+        _fetchMoreMoneyRecord();
+      }
+    });
+  }
 
-    if (isValid && !showProjectError.value && !showImageError.value) {
-      receipts.insert(
-        0,
-        MoneyRecord(
-          id: DateTime.now().toString(),
-          projectName: selectedProject.value!,
-          amount: amountController.text,
-          mode: selectedMode.value!,
-          remark: remarkController.text,
-          date: "21 Jan 2026",
-          imagePath: selectedImage.value?.path,
-        ),
+  Future<void> onRefresh() async {
+    currentPage = 1;
+    canLoadMore = true;
+    await _fetchTotalCollection();
+    await _fetchMoneyRecord(isRefresh: true);
+  }
+
+  void addRecord(PaymentReceivedModel record) {
+    moneyRecord.insert(0, record); // Insert at the beginning(record);
+  }
+
+  // Modified to handle initial load and refresh
+  Future<void> _fetchMoneyRecord({bool isRefresh = false}) async {
+    if (isLoading.value) return;
+    isLoading.value = true;
+
+    try {
+      final response = await THttpHelper.getRequest(
+        API.getApis.moneyReceivedList,
+        queryParams: {
+          'page': currentPage.toString(),
+          "userId": AuthController.instance.authUser?.userDetails.id.toString(),
+        },
       );
 
-      Get.back();
-      _resetForm();
-      Get.snackbar(
-        "Success",
-        "Payment report submitted",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      if (response != null) {
+        List<PaymentReceivedModel> newData = paymentReceivedModelFromJson(
+          jsonEncode(response["data"]),
+        );
+
+        if (isRefresh) {
+          moneyRecord.assignAll(newData);
+        } else {
+          moneyRecord.addAll(newData);
+        }
+
+        // Check if we should stop pagination (e.g., if less than 15 items returned)
+        if (newData.length < 15) {
+          canLoadMore = false;
+        }
+      }
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  void _resetForm() {
-    selectedProject.value = null;
-    selectedMode.value = null;
-    selectedImage.value = null;
-    amountController.clear();
-    remarkController.clear();
+  // Method for pagination
+  Future<void> _fetchMoreMoneyRecord() async {
+    if (isMoreLoading.value || !canLoadMore || isLoading.value) return;
+
+    isMoreLoading.value = true;
+    currentPage++;
+
+    try {
+      final response = await THttpHelper.getRequest(
+        "${API.getApis.moneyReceivedList}?page=$currentPage",
+      );
+
+      if (response != null) {
+        List<PaymentReceivedModel> newData = paymentReceivedModelFromJson(
+          jsonEncode(response["data"]),
+        );
+
+        if (newData.isEmpty) {
+          canLoadMore = false;
+        } else {
+          moneyRecord.addAll(newData);
+        }
+      }
+    } finally {
+      isMoreLoading.value = false;
+    }
   }
 
-  Future<void> pickImage(FormFieldState<File> field) async {
-    final image = await ImageUploadService.pickImageFromSource(
-      ImageSource.gallery,
-    );
-    if (image != null) {
-      selectedImage.value = image;
-      field.didChange(image);
+  Future<void> _fetchTotalCollection() async {
+    final response = await THttpHelper.getRequest(API.getApis.modenyCollection);
+    if (response != null) {
+      collection.value = response["data"]["total_received"] != null
+          ? double.parse(response["data"]["total_received"].toString())
+          : 0.0;
     }
+  }
+
+  @override
+  void onClose() {
+    scrollController.dispose();
+    super.onClose();
   }
 }

@@ -572,6 +572,9 @@ class EquipmentScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
+                  onTapOutside: (PointerDownEvent event) {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                  },
                   controller: controller.returnRemarkController,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   maxLines: 3,

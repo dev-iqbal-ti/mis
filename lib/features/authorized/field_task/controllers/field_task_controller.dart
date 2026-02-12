@@ -1,3 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:dronees/models/employees_model.dart';
+import 'package:dronees/utils/http/api.dart';
+import 'package:dronees/utils/http/http_client.dart';
 import 'package:dronees/widgets/submit_confirmation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -5,7 +11,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 
 class FieldTaskController extends GetxController {
   final taskFormKey = GlobalKey<FormState>();
-
+  Timer? _debounce;
   // Controllers
   final clientNameController = TextEditingController();
   final phoneController = TextEditingController();
@@ -19,14 +25,10 @@ class FieldTaskController extends GetxController {
   var locationName = "".obs;
   var currentPosition = Rxn<gmaps.LatLng>();
   var isReady = false.obs;
-
-  final teamMembers = [
-    "Alex Johnson",
-    "Jordan Smith",
-    "Sarah Williams",
-    "Michael Brown",
-    "Priya Das",
-  ];
+  var isLoadingUser = false.obs;
+  RxList<Employees> teamMembers = <Employees>[].obs;
+  RxList<Employees> selectedTeamMembersList = <Employees>[].obs;
+  var searchController = TextEditingController();
 
   // Mock Data
   final projects = ["Skyline Residency", "Metro Bridge", "Global Tech Hub"];
@@ -38,6 +40,44 @@ class FieldTaskController extends GetxController {
   void onInit() {
     super.onInit();
     getLocation();
+  }
+
+  @override
+  void onClose() {
+    _debounce?.cancel();
+    clientNameController.dispose();
+    super.onClose();
+  }
+
+  Future<void> getTeamMembers({String? search}) async {
+    isLoadingUser.value = true;
+    final queryParams = <String, dynamic>{};
+    if (search != null && search.trim().isNotEmpty) {
+      queryParams["search"] = search;
+    }
+    final response = await THttpHelper.getRequest(
+      API.getApis.getUsers,
+      queryParams: queryParams,
+    );
+
+    if (response == null) {
+      isLoadingUser.value = false;
+      return;
+    }
+
+    isLoadingUser.value = false;
+    teamMembers.value = employeesFromJson(json.encode(response["data"]));
+    // selectedTeamMembersList.value = teamMembers;
+  }
+
+  void searchTeamMembers(String search) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    // Start new timer
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      getTeamMembers(search: search);
+      searchController.text = search;
+    });
   }
 
   Future<void> getLocation() async {
@@ -56,12 +96,13 @@ class FieldTaskController extends GetxController {
     }
   }
 
-  void toggleTeamMember(String name) {
-    if (selectedTeamMembers.contains(name)) {
-      selectedTeamMembers.remove(name);
+  void toggleTeamMember(Employees emp, FormFieldState<List<Employees>> field) {
+    if (selectedTeamMembersList.contains(emp)) {
+      selectedTeamMembersList.remove(emp);
     } else {
-      selectedTeamMembers.add(name);
+      selectedTeamMembersList.add(emp);
     }
+    field.didChange(selectedTeamMembersList);
   }
 
   void submitTask() {

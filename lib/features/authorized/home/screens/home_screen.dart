@@ -1,10 +1,12 @@
 import 'dart:io';
 
+import 'package:dronees/features/authorized/attendance/screens/attendance_screen.dart';
 import 'package:dronees/models/quick_action.dart';
 import 'package:dronees/utils/constants/contants.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 class MyWidget extends StatelessWidget {
@@ -308,7 +310,7 @@ class HomeScreen extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
-              // Navigate to attendance with geo-tag image
+              Get.to(() => AttendanceScreen());
             },
             borderRadius: BorderRadius.circular(24),
             child: Padding(
@@ -373,6 +375,19 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildQuickActionsSection() {
+    // Helper to chunk the list into pairs
+    List<List<dynamic>> chunks = [];
+    for (var i = 0; i < homeScreenQuickActions.length; i += 2) {
+      chunks.add(
+        homeScreenQuickActions.sublist(
+          i,
+          i + 2 > homeScreenQuickActions.length
+              ? homeScreenQuickActions.length
+              : i + 2,
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         TSizes.defaultPadding,
@@ -393,24 +408,45 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: TSizes.minSpaceBtw),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.1,
-            children: homeScreenQuickActions
-                .map(
-                  (e) => _buildActionCard(
-                    icon: e.icon,
-                    title: e.title,
-                    subtitle: e.subtitle,
-                    color: e.color,
-                    onTap: e.onTap,
-                  ),
-                )
-                .toList(),
+
+          // Build the layout dynamically
+          Column(
+            children: chunks.map((chunk) {
+              return Padding(
+                padding: const EdgeInsets.only(
+                  bottom: 12.0,
+                ), // Vertical spacing
+                child: Row(
+                  children: chunk.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final e = entry.value;
+                    final isLastSingleItem = chunk.length == 1;
+
+                    return Expanded(
+                      flex: 1,
+                      child: Padding(
+                        // Add spacing between items only if there are two
+                        padding: EdgeInsets.only(
+                          right: (!isLastSingleItem && index == 0) ? 12.0 : 0,
+                        ),
+                        child: AspectRatio(
+                          // Maintain original aspect ratio for pairs,
+                          // but make the full-width one shorter/sleeker
+                          aspectRatio: isLastSingleItem ? 2.2 : 1.1,
+                          child: _buildActionCard(
+                            icon: e.icon,
+                            title: e.title,
+                            subtitle: e.subtitle,
+                            color: e.color,
+                            onTap: e.onTap,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              );
+            }).toList(),
           ),
         ],
       ),

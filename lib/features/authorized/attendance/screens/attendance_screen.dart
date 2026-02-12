@@ -7,15 +7,13 @@ import 'package:dronees/features/authorized/attendance/widgets/show_attendance_d
 import 'package:dronees/utils/constants/colors.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:dronees/utils/constants/text_strings.dart';
+import 'package:dronees/utils/device/device_utility.dart';
 import 'package:dronees/widgets/submit_confirmation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
-
-// Import your controller here
-// import 'package:dronees/features/authorized/attendance/controllers/attendance_controller.dart';
 
 class AttendanceScreen extends StatelessWidget {
   const AttendanceScreen({super.key});
@@ -25,149 +23,149 @@ class AttendanceScreen extends StatelessWidget {
     final AttendanceController controller = Get.put(AttendanceController());
 
     return Scaffold(
-      body: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle.dark.copyWith(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-        ),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF6325FF), TColors.primary, Color(0xFFF5F6FA)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              stops: [0.0, 0.3, 1.0],
+      backgroundColor: TColors.primary,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              color: Colors.white,
+              size: 18,
             ),
           ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                // Header Section
-                _buildHeader(controller),
-
-                // Main Content
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
-                    ),
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(32),
-                          topRight: Radius.circular(32),
-                        ),
-                      ),
-                      child: RefreshIndicator(
-                        onRefresh: () async => controller.refreshData(),
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: TSizes.spaceBtwItems),
-
-                              // Statistics Cards
-                              _buildStatisticsSection(controller),
-
-                              const SizedBox(height: TSizes.spaceBtwItems),
-
-                              // Acknowledgment Card (After Punch Out)
-                              Obx(
-                                () => controller.showAcknowledgment.value
-                                    ? _buildAcknowledgmentCard(controller)
-                                    : const SizedBox.shrink(),
-                              ),
-
-                              // Current Session Card OR Empty State
-                              Obx(() => _buildCurrentSessionCard(controller)),
-
-                              Obx(
-                                () =>
-                                    controller.todayCompletedRecord.value !=
-                                            null &&
-                                        controller.currentAttendance.value ==
-                                            null
-                                    ? SizedBox.shrink()
-                                    : const SizedBox(height: 20),
-                              ),
-                              // const SizedBox(height: 20),
-
-                              // Action Button (Punch In or Punch Out)
-                              Obx(
-                                () => _buildActionButton(context, controller),
-                              ),
-
-                              const SizedBox(height: 24),
-
-                              // Attendance History
-                              _buildHistorySection(controller),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+          onPressed: () => Get.back(),
+        ),
+        title: _buildHeader(controller),
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+      ),
+      body: Stack(
+        children: [
+          Container(color: TColors.primary),
+          Container(
+            margin: EdgeInsets.only(
+              top:
+                  TDeviceUtils.getStatusBarHeight() +
+                  TDeviceUtils.getAppBarHeight() +
+                  20,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FA),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(32),
+                topRight: Radius.circular(32),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -5),
                 ),
               ],
             ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(32),
+                topRight: Radius.circular(32),
+              ),
+              child: RefreshIndicator(
+                onRefresh: controller.refreshData,
+                color: TColors.primary,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 24),
+
+                      /// Statistics
+                      _buildStatisticsSection(controller),
+
+                      const SizedBox(height: 20),
+
+                      /// Acknowledgment
+                      Obx(() {
+                        if (!controller.showAcknowledgment.value) {
+                          return const SizedBox.shrink();
+                        }
+
+                        return _buildAcknowledgmentCard(controller);
+                      }),
+
+                      /// Current Session
+                      Obx(() => _buildCurrentSessionCard(controller)),
+
+                      const SizedBox(height: 20),
+
+                      /// Action Button
+                      Obx(() => _buildActionButton(context, controller)),
+
+                      const SizedBox(height: TSizes.minSpaceBtw),
+
+                      /// History Section
+                      _buildHistorySection(controller),
+
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader(AttendanceController controller) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: TSizes.defaultPadding,
-        right: TSizes.defaultPadding,
-        top: Platform.isAndroid ? 20 : 0,
-        bottom: TSizes.defaultPadding,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Attendance',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
-                  ),
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Attendance',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
                 ),
+              ),
 
-                Text(
-                  DateFormat('EEEE, MMMM d, y').format(DateTime.now()),
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+              Text(
+                DateFormat('EEEE, MMMM d, y').format(DateTime.now()),
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Iconsax.calendar_1_copy,
-              color: Colors.white,
-              size: 28,
-            ),
+        ),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(16),
           ),
-        ],
-      ),
+          child: const Icon(
+            Iconsax.calendar_1_copy,
+            color: Colors.white,
+            size: 28,
+          ),
+        ),
+      ],
     );
   }
 
@@ -1044,28 +1042,25 @@ class AttendanceScreen extends StatelessWidget {
   Widget _buildHistorySection(AttendanceController controller) {
     return Obx(() {
       if (controller.attendanceHistory.isEmpty) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Center(
-            child: Column(
-              children: [
-                Icon(Iconsax.document_text, size: 64, color: Colors.grey[300]),
-                const SizedBox(height: 16),
-                Text(
-                  'No attendance history yet',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[600],
-                  ),
+        return Center(
+          child: Column(
+            children: [
+              Icon(Iconsax.document_text, size: 64, color: Colors.grey[300]),
+              const SizedBox(height: 16),
+              Text(
+                'No attendance history yet',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[600],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Your attendance records will appear here',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Your attendance records will appear here',
+                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+              ),
+            ],
           ),
         );
       }
@@ -1073,8 +1068,8 @@ class AttendanceScreen extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
               'Attendance History',
               style: TextStyle(

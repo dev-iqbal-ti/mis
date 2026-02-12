@@ -1,28 +1,54 @@
-import 'dart:io';
-
-import 'package:dronees/clipper/ticket_clipper.dart';
-import 'package:dronees/features/authorized/money_receive/models/money_record.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dronees/features/authorized/money_receive/models/payment_received_model.dart';
+import 'package:dronees/utils/constants/sizes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart'; // Add intl for better date formatting
+import 'package:shimmer/shimmer.dart';
 
 class TransactionDetailScreen extends StatelessWidget {
-  final MoneyRecord record;
+  final PaymentReceivedModel record;
   const TransactionDetailScreen({super.key, required this.record});
+
+  // Helper to get status details
+  Color _getStatusColor() {
+    switch (record.status) {
+      case "Approved":
+        return const Color(0xFF00B894); // Approved/Success
+      case "Pending":
+        return const Color(0xFFFDCB6E); // Pending
+      default:
+        return const Color(0xFFFF7675); // Rejected/Error
+    }
+  }
+
+  String _getStatusLabel() {
+    switch (record.status) {
+      case "Approved":
+        return "APPROVED";
+      case "Pending":
+        return "PENDING";
+      default:
+        return "REJECTED";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black.withOpacity(0.5), // Dim the background
+      backgroundColor: Colors.black.withAlpha(150),
       body: GestureDetector(
-        onTap: () => Get.back(), // Close when tapping outside
+        onTap: () => Get.back(),
         child: Center(
           child: Hero(
-            tag: record.id, // Same ID as the list item
+            tag: 'transaction-${record.id}',
             child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: TSizes.defaultPadding,
+              ),
               child: Material(
                 color: Colors.transparent,
-                child:
-                    _buildTicketUI(), // Your Ticket UI logic from previous turn
+                child: _buildTicketUI(),
               ),
             ),
           ),
@@ -33,78 +59,168 @@ class TransactionDetailScreen extends StatelessWidget {
 
   Widget _buildTicketUI() {
     return Container(
-      width: Get.width * 0.9,
-      margin: const EdgeInsets.symmetric(vertical: 40),
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
+          ),
+        ],
       ),
-      child: ClipPath(
-        clipper: TicketClipper(),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // --- HEADER: Project, Method, Date ---
-            _buildHeader(),
+      // Use ClipPath if you have a specific TicketClipper shape
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHeader(),
+          const SizedBox(height: 30),
+          _buildAmountSection(),
+          const SizedBox(height: 20),
 
-            const SizedBox(height: 24),
+          if (record.proof != null) _buildPhotoProof(record.proof!),
 
-            // --- PAID AMOUNT ---
-            _buildAmountSection(),
+          _buildRemarkSection(),
 
-            const SizedBox(height: 20),
+          _buildDashedSeparator(),
+          _buildCloseButton(),
+        ],
+      ),
+    );
+  }
 
-            // --- CONDITIONAL REMARK (TOP) ---
-            if (record.imagePath != null) _buildRemark(record.remark),
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        TSizes.defaultPadding,
+        24,
+        TSizes.defaultPadding,
+        20,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FD),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      record.projectName.toUpperCase(),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                        letterSpacing: 1.2,
+                        color: Color(0xFF636E72),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      record.method,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Color(0xFF2D3436),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildStatusBadge(),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-            // --- PHOTO PROOF ---
-            if (record.imagePath != null) _buildPhotoProof(record.imagePath!),
-
-            // --- CONDITIONAL REMARK (BOTTOM) ---
-            if (record.imagePath == null) _buildRemark(record.remark),
-
-            const SizedBox(height: 10),
-
-            // --- DASHED LINE & HELP ---
-            _buildDashedSeparator(),
-
-            // --- ACTION BUTTON ---
-            _buildCloseButton(),
-          ],
+  Widget _buildStatusBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: _getStatusColor().withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _getStatusColor().withOpacity(0.5), width: 1),
+      ),
+      child: Text(
+        _getStatusLabel(),
+        style: TextStyle(
+          color: _getStatusColor(),
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  // Helper methods (Header, Amount, Remark, etc.) would go here...
-  // 1. HEADER: Project, Method, and Date
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+  Widget _buildAmountSection() {
+    return Column(
+      children: [
+        const Text(
+          "TOTAL AMOUNT RECEIVED",
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "₹",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w600,
+                color: _getStatusColor(),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              record.amount,
+              style: const TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF2D3436),
+                letterSpacing: -1,
+              ),
+            ),
+          ],
+        ),
+        Text(
+          DateFormat('MMM dd, yyyy • hh:mm a').format(record.createdAt),
+          style: const TextStyle(color: Colors.grey, fontSize: 13),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRemarkSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: TSizes.defaultPadding,
       ),
       child: Column(
         children: [
+          const Icon(Icons.format_quote, color: Color(0xFFDCDDE1)),
           Text(
-            "Project: ${record.projectName}  |  Method: ${record.mode}",
+            record.remark.isEmpty ? "No remarks provided" : record.remark,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "Date: ${record.date} • 12:45 PM",
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
+            style: TextStyle(
+              color: Colors.blueGrey[800],
+              fontSize: 15,
+              fontStyle: FontStyle.italic,
+              height: 1.5,
             ),
           ),
         ],
@@ -112,163 +228,99 @@ class TransactionDetailScreen extends StatelessWidget {
     );
   }
 
-  // 2. AMOUNT SECTION: Large central display
-  Widget _buildAmountSection() {
-    return Column(
+  Widget _buildAuditRow(IconData icon, String label, String value) {
+    return Row(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(top: 12, right: 4),
-              child: Text(
-                "Paid",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const Text(
-              "₹",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                height: 1.8,
-                color: Color(0xFF6C5CE7),
-              ),
-            ),
-            Text(
-              record.amount,
-              style: const TextStyle(
-                fontSize: 52,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -1,
-                color: Color(0xFF2D3436),
-              ),
-            ),
-          ],
+        Icon(icon, size: 18, color: Colors.grey),
+        const SizedBox(width: 12),
+        Text(
+          "$label:",
+          style: const TextStyle(color: Colors.grey, fontSize: 13),
         ),
-        const Text(
-          "to Dronees Office",
-          style: TextStyle(
-            fontSize: 16,
+        const SizedBox(width: 8),
+        Text(
+          value,
+          style: const TextStyle(
             fontWeight: FontWeight.w600,
-            color: Colors.grey,
+            fontSize: 13,
+            color: Color(0xFF2D3436),
           ),
         ),
       ],
     );
   }
 
-  // 3. REMARK: Reusable text block
-  Widget _buildRemark(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.grey[700],
-          fontSize: 14,
-          fontStyle: FontStyle.italic,
-          height: 1.4,
-        ),
-      ),
-    );
-  }
-
-  // 4. PHOTO PROOF: Dark container with contained image
   Widget _buildPhotoProof(String path) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      height: 200,
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+      height: 180,
       width: double.infinity,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: const Color(0xFF1E1E1E), // Dark background for contrast
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, 5),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Image.file(File(path), fit: BoxFit.contain),
+        borderRadius: BorderRadius.circular(24),
+        child: CachedNetworkImage(
+          imageUrl: path,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Shimmer.fromColors(
+            baseColor: Colors.grey[200]!,
+            highlightColor: Colors.white,
+            child: Container(color: Colors.white),
+          ),
+          errorWidget: (context, url, error) => Container(
+            color: const Color(0xFFF1F2F6),
+            child: const Icon(Icons.broken_image_outlined, color: Colors.grey),
+          ),
+        ),
       ),
     );
   }
 
-  // 5. DASHED SEPARATOR: The "Tear" line
   Widget _buildDashedSeparator() {
-    return Column(
-      children: [
-        const SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Row(
-            children: List.generate(
-              25,
-              (index) => Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  color: index % 2 == 0
-                      ? Colors.transparent
-                      : Colors.grey.shade300,
-                  height: 2,
-                ),
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Row(
+        children: List.generate(
+          30,
+          (index) => Expanded(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              height: 1,
+              color: index % 2 == 0
+                  ? Colors.transparent
+                  : Colors.grey.withOpacity(0.3),
             ),
           ),
         ),
-        const SizedBox(height: 20),
-        const Text(
-          "Need help with this transaction?",
-          style: TextStyle(color: Colors.grey, fontSize: 12),
-        ),
-        TextButton(
-          onPressed: () {},
-          child: const Text(
-            "click here",
-            style: TextStyle(
-              color: Color(0xFF6C5CE7),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  // 6. CLOSE BUTTON: Styled primary button
   Widget _buildCloseButton() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      child: SizedBox(
-        width: double.infinity,
-        height: 54,
-        child: ElevatedButton(
-          onPressed: () => Get.back(),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF6C5CE7),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            elevation: 0,
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
+      child: ElevatedButton(
+        onPressed: () => Get.back(),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF2D3436),
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: const Text(
-            "Close Report",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
+          elevation: 0,
+        ),
+        child: const Text(
+          "Done",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
     );

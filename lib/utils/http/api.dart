@@ -21,13 +21,16 @@ class GetApis {
   final String getTravelAllowance = "/travel/my";
   final String getTravelAllowanceStats = "/travel/stats";
   final String getTravelAllowanceReportList = "/travel/list";
-
+  final String getUsers = "/users/getUsers";
   final String getGallery = "/gallery";
 
   final String getEquipments = "/equipment";
   final String getAssignedEquipments = "/equipment/assigned";
 
-  final String getProjects = "/master/projects";
+  final String getProjects = "/payment-received/projects";
+  final String moneyReceivedList = "/payment-received";
+  final String modenyCollection = "/payment-received/collection";
+  String verifyPayment(int id) => "/payment-received/approve/$id";
 }
 
 class PostApis {
@@ -46,4 +49,6 @@ class PostApis {
 
   final String assignEquipment = "/equipment/assign";
   final String unassignEquipment = "/equipment/unassign";
+
+  final String submitMoneyReceived = "/payment-received";
 }
