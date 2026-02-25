@@ -194,15 +194,7 @@ class GalleryScreen extends StatelessWidget {
               final item = items[index];
               return GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ImageDetailScreen(
-                        selectedItem: item,
-                        allItems: items,
-                      ),
-                    ),
-                  );
+                  controller.navigateToImageDetails(items, item);
                 },
                 child: Hero(
                   tag: item.id,

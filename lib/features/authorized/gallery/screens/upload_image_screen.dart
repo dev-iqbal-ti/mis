@@ -3,6 +3,7 @@ import 'package:dronees/utils/constants/image_strings.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:lottie/lottie.dart';
 
@@ -29,7 +30,12 @@ class UploadImageScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.fromLTRB(
+            TSizes.defaultPadding,
+            8.0,
+            0,
+            8.0,
+          ),
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,

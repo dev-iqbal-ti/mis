@@ -108,7 +108,6 @@ class FieldTaskController extends GetxController {
   void submitTask() {
     taskFormKey.currentState!.save();
 
-    // Logic to save data
     Get.snackbar(
       "Success",
       "Task report submitted successfully",

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -15,6 +16,7 @@ class _RunningClockState extends State<RunningClock> {
 
   @override
   void initState() {
+    log("Init Clock Widget");
     super.initState();
     _updateTime();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateTime());
@@ -22,12 +24,13 @@ class _RunningClockState extends State<RunningClock> {
 
   void _updateTime() {
     final now = DateTime.now();
-    final formatted = DateFormat("h:mm a").format(now);
+    final formatted = DateFormat("hh:mm:ss a").format(now);
     setState(() => _time = formatted);
   }
 
   @override
   void dispose() {
+    log("disposed Clock Widget");
     _timer.cancel();
     super.dispose();
   }

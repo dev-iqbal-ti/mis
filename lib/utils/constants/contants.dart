@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:dronees/features/authorized/bd_visit/screens/bd_visit_list_screen.dart';
 import 'package:dronees/features/authorized/equipment/screens/equipment_tracking_screen.dart';
 import 'package:dronees/features/authorized/field_task/screens/field_task_screen.dart';
 import 'package:dronees/features/authorized/leave/screens/leave_summary_screen.dart';
@@ -45,5 +46,12 @@ final List<QuickAction> homeScreenQuickActions = [
     subtitle: 'Approve receives',
     color: TColors.carbsColor,
     onTap: () => Get.to(() => VerifyPaymentScreen()),
+  ),
+  QuickAction(
+    icon: Iconsax.airplane,
+    title: 'Business Development Visit',
+    subtitle: 'Schedule tour visit tour', // Updated text
+    color: const Color.fromARGB(255, 212, 191, 51),
+    onTap: () => Get.to(() => BDVisitListScreen()),
   ),
 ];

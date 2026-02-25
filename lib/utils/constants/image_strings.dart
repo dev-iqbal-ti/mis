@@ -5,6 +5,7 @@ class TImages {
   static const String onboardImage = 'assets/images/onboard/onboard.png';
   static const String taBanner = 'assets/images/taBanner.png';
   static const String leaveIcon = 'assets/images/leave.png';
+  static const String leaveImage = 'assets/images/leave_image.png';
   static const String taskBanner = 'assets/images/taskBanner.jpeg';
   static const String receivedMoneyBanner = 'assets/images/receivedMoney.jpeg';
   static const String leaveBanner = 'assets/images/leaveBanner.jpeg';
@@ -18,4 +19,8 @@ class TImages {
   static const String deleteLoading = 'assets/animations/delete_file.json';
   static const String emptyList = 'assets/animations/Empty_List.json';
   static const String image_preview = 'assets/animations/image_preview.json';
+  static const String noInternet = 'assets/animations/No_connection.json';
+
+  // -- Image Logo --
+  static const String logo = 'assets/iconsAndSplash/splash.png';
 }

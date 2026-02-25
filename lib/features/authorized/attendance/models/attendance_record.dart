@@ -10,6 +10,7 @@ String attendanceToJson(List<AttendanceRecord> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 class AttendanceRecord {
+  final int id;
   final int userId;
   final DateTime date;
   final DateTime inTime;
@@ -25,6 +26,7 @@ class AttendanceRecord {
   final String photoUrl;
 
   AttendanceRecord({
+    required this.id,
     required this.idleState,
     required this.latitude,
     required this.longitude,
@@ -44,6 +46,7 @@ class AttendanceRecord {
   factory AttendanceRecord.fromJsonWithError(Map<String, dynamic> json) {
     try {
       return AttendanceRecord(
+        id: json["id"] as int,
         userId: json["user_id"] as int,
         date: DateTime.parse(json["date"]),
         inTime: DateTime.parse(json["in_time"]).toLocal(),
@@ -72,6 +75,7 @@ class AttendanceRecord {
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
     // log(DateTime.parse(json["in_time"]).toLocal().toString());
     return AttendanceRecord(
+      id: requiredField<int>(json["id"], "Id"),
       userId: requiredField<int>(json["user_id"], "User_id"),
 
       date: requiredField<DateTime>(
@@ -98,6 +102,7 @@ class AttendanceRecord {
   }
 
   Map<String, dynamic> toJson() => {
+    "id": id,
     "user_id": userId,
 
     "date": date.toIso8601String(),

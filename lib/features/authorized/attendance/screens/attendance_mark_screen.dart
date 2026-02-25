@@ -1,8 +1,15 @@
-import 'package:dronees/features/authorized/attendance/controllers/attendance_controller.dart';
+import 'package:dronees/controllers/auth_controller.dart';
+import 'package:dronees/features/authorized/attendance/controllers/attendance_mark_controller.dart';
 import 'package:dronees/features/authorized/attendance/widgets/attendance_map.dart';
 import 'package:dronees/features/authorized/attendance/widgets/running_clock.dart';
+import 'package:dronees/features/authorized/attendance/widgets/vehicle_selector.dart';
+import 'package:dronees/features/authorized/money_receive/models/projects_model.dart';
+import 'package:dronees/utils/constants/colors.dart';
+import 'package:dronees/utils/validators/validation.dart';
+import 'package:dronees/widgets/custom_bottom_sheet_dropdown.dart';
 import 'package:dronees/widgets/submit_confirmation.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
@@ -14,10 +21,11 @@ class AttendanceMarkScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AttendanceController controller = AttendanceController.instance;
-    controller.initMarkScreen();
+    final AttendanceMarkController controller = Get.put(
+      AttendanceMarkController(),
+    );
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Color(0xFFF8F9FA),
       body: CustomScrollView(
         slivers: [
           // 1. --- SHRINKING MAP HEADER ---
@@ -42,7 +50,9 @@ class AttendanceMarkScreen extends StatelessWidget {
                     color: Colors.black,
                     size: 20,
                   ),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    controller.goBack();
+                  },
                 ),
               ),
             ),
@@ -72,7 +82,7 @@ class AttendanceMarkScreen extends StatelessWidget {
           SliverToBoxAdapter(
             child: Container(
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: Color(0xFFF8F9FA),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
               ),
               child: Padding(
@@ -92,6 +102,9 @@ class AttendanceMarkScreen extends StatelessWidget {
                     _buildSectionHeader(context, "Current Schedule"),
 
                     _buildEnhancedScheduleCard(),
+                    const SizedBox(height: 20),
+
+                    _buildDriverSection(controller),
                     const SizedBox(height: 20),
 
                     // Attendance Proof Section
@@ -126,7 +139,204 @@ class AttendanceMarkScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildDriverSection(AttendanceMarkController controller) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // --- Idle State Toggle Row ---
+          if (AuthController.instance.authUser?.userDetails.rolesDisplayNames !=
+              "Driver")
+            Form(
+              key: controller.formKey,
+              child: Column(
+                children: <Widget>[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Iconsax.status,
+                              size: 20,
+                              color: TColors.primary,
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              "Idle State",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Obx(
+                          () => Switch.adaptive(
+                            // Adaptive provides a native look on iOS/Android
+                            value: controller.isIdle.value,
+                            activeColor: Colors.green.shade600,
+                            activeTrackColor: Colors.green.shade100,
+                            onChanged: (value) =>
+                                controller.isIdle.value = value,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // --- Animated Visibility for Client Project ---
+                  Obx(
+                    () => AnimatedSize(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      child: !controller.isIdle.value
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 20),
+                                const Text(
+                                  "Client Project",
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 8),
+                                CustomBottomSheetDropdown<ProjectsModel>(
+                                  displayText: (project) => project.name,
+                                  isLoading: RxBool(false),
+                                  validator: (value) => TValidator.validateNull(
+                                    value,
+                                    "Project is required.",
+                                  ),
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
+                                  label: "Select Project",
+                                  items: controller.projects,
+                                  selectedValue: controller.selectedProject,
+                                  onSelect: (val, state) {
+                                    controller.selectedProject.value = val;
+                                    state.didChange(val);
+                                  },
+                                  icon: Iconsax.folder,
+                                ),
+                              ],
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // --- Meter Reading ---
+          if (AuthController.instance.authUser?.userDetails.rolesDisplayNames ==
+              "Driver")
+            Form(
+              key: controller.formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  VehicleSelectorFormField(
+                    vehicles: controller.vehicles,
+                    initialValue: controller.selectedVehicle.value,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    onVehicleSelected: (v) =>
+                        controller.selectedVehicle.value = v,
+                    onSaved: (v) => controller.selectedVehicle.value = v,
+                    validator: (value) =>
+                        TValidator.validateNull(value, "Vehicle is required."),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Divider(thickness: 1, height: 1),
+                  ),
+                  const Text(
+                    "Meter Reading",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    onTapOutside: (event) =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    controller: controller.meterReadingController,
+                    validator: (value) =>
+                        TValidator.validateDecimalInput("Meter Reading", value),
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    decoration: _buildInputDecoration(
+                      hint: "Enter Meter Reading",
+                      icon: FontAwesomeIcons.gaugeHigh,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // --- Co-Passenger ---
+                  const Text(
+                    "Co-Passenger",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    onTapOutside: (event) =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    controller: controller.coPassengerController,
+                    validator: (value) =>
+                        TValidator.emptyValidator(value, "Co-Passenger"),
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    decoration: _buildInputDecoration(
+                      hint: "Enter Co-Passenger",
+                      icon: FontAwesomeIcons.person,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   // --- UI COMPONENT HELPERS ---
+
+  InputDecoration _buildInputDecoration({String? hint, IconData? icon}) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: icon != null
+          ? Icon(icon, color: TColors.primary, size: 20)
+          : null,
+      filled: true,
+      fillColor: const Color(0xFFF8F9FA),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
+      ),
+    );
+  }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
@@ -143,11 +353,11 @@ class AttendanceMarkScreen extends StatelessWidget {
   }
 
   Widget _buildEnhancedProfileCard() {
-    final controller = AttendanceController.instance;
+    final controller = AttendanceMarkController.to;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
@@ -213,13 +423,11 @@ class AttendanceMarkScreen extends StatelessWidget {
   }
 
   Widget _buildEnhancedScheduleCard() {
-    final controller = AttendanceController.instance;
+    final controller = AttendanceMarkController.to;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [const Color(0xFFF9FAFB), Colors.white],
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade100),
       ),
@@ -265,7 +473,7 @@ class AttendanceMarkScreen extends StatelessWidget {
   }
 
   Widget _buildSelfiePreview() {
-    final controller = AttendanceController.instance;
+    final controller = AttendanceMarkController.to;
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: Stack(
@@ -295,7 +503,7 @@ class AttendanceMarkScreen extends StatelessWidget {
   }
 
   Widget _buildMainActionButton(BuildContext context) {
-    final controller = AttendanceController.instance;
+    final controller = AttendanceMarkController.to;
     bool hasPhoto = controller.selfieFile.value != null;
 
     return ElevatedButton(
@@ -307,21 +515,27 @@ class AttendanceMarkScreen extends StatelessWidget {
         shadowColor: const Color(0xFF5F4FD1).withOpacity(0.4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
-      onPressed: controller.isLoading.value
-          ? null
-          : (!hasPhoto
-                ? () => controller.takeSelfieAndTag()
-                : () => SubmitConfirmationSheet.show(
-                    context,
-                    icon: Iconsax.clock,
-                    title: "Confirm Attendance",
-                    subtitle:
-                        "Are you sure you want to mark your attendance now?",
-                    confirmButtonText: "Yes, Mark Now",
-                    cancelButtonText: "Cancel",
-                    onConfirm: () => controller.clockIn(),
-                    cancelOutside: false,
-                  )),
+      onPressed: () {
+        if (controller.isLoading.value) {
+          return;
+        }
+        if (!controller.formKey.currentState!.validate()) {
+          return;
+        } else if (!hasPhoto) {
+          controller.takeSelfieAndTag();
+        } else {
+          SubmitConfirmationSheet.show(
+            context,
+            icon: Iconsax.clock,
+            title: "Confirm Attendance",
+            subtitle: "Are you sure you want to mark your attendance now?",
+            confirmButtonText: "Yes, Mark Now",
+            cancelButtonText: "Cancel",
+            onConfirm: () => controller.clockIn(),
+            cancelOutside: false,
+          );
+        }
+      },
       child: controller.isLoading.value
           ? const SizedBox(
               width: 20,

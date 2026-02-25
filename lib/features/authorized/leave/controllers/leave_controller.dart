@@ -1,200 +1,230 @@
-import 'dart:developer';
+import 'dart:convert';
 
-import 'package:dronees/features/authorized/leave/models/leave_duration.dart';
+import 'package:dronees/controllers/auth_controller.dart';
+
+import 'package:dronees/features/authorized/leave/models/leave_entitlement.dart';
+import 'package:dronees/features/authorized/leave/models/leaves.dart';
+import 'package:dronees/utils/http/api.dart';
+import 'package:dronees/utils/http/http_client.dart';
+import 'package:dronees/utils/popups/loaders.dart';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class LeaveController extends GetxController {
+  static LeaveController get to => Get.find();
   // Reactive variable for tab switching
   var selectedTabIndex = 1.obs;
   final int availableLeave = 20;
   final int usedLeave = 2;
   Rxn<String> selectedValue = Rxn<String>(null);
-  GlobalKey<FormState> leaveFormKey = GlobalKey<FormState>();
-  // TextEditingController emergencyContactController = TextEditingController();
-  TextEditingController purposeController = TextEditingController();
-  // final selectedDate = DateTime.now().obs;
-  var emergencyContact = ''.obs;
 
-  Rx<LeaveType> selectedLeaveType = LeaveType.fullDay.obs;
   Rx<DateTime> startDate = DateTime.now().obs;
   Rx<DateTime?> endDate = Rx<DateTime?>(null);
-  Rx<HalfDaySession?> startHalfDay = Rx<HalfDaySession?>(null);
-  Rx<HalfDaySession?> endHalfDay = Rx<HalfDaySession?>(null);
 
   void setTab(int index) => selectedTabIndex.value = index;
 
   Rx<DateTime> get selectedDate => startDate;
 
+  // new ui...
+  final ScrollController scrollController = ScrollController();
+
+  final selectedStatus = 'All'.obs;
+  final selectedDateForFilter = Rxn<DateTime>();
+
+  // Pagination
+  final isLoadingMore = false.obs;
+  final isRefreshing = false.obs;
+  final hasMore = true.obs;
+  static const int _pageSize = 10;
+
+  Rx<LeaveEntitlement> casualLeaveEntitlements = Rx<LeaveEntitlement>(
+    LeaveEntitlement(
+      id: 1,
+      userId: 0,
+      entitlement: 12,
+      used: 0,
+      leaveTypeName: "Casual Leave",
+      remaining: 0,
+    ),
+  );
+  Rx<LeaveEntitlement> earnedLeaveEntitlements = Rx<LeaveEntitlement>(
+    LeaveEntitlement(
+      id: 2,
+      userId: 1,
+      entitlement: 2,
+      used: 0,
+      leaveTypeName: 'Earned Leave',
+      remaining: 2,
+    ),
+  );
+  Rx<LeaveEntitlement> floatingHolidayEntitlements = Rx<LeaveEntitlement>(
+    LeaveEntitlement(
+      id: 3,
+      userId: 1,
+      entitlement: 2,
+      used: 0,
+      leaveTypeName: "Floating Holiday",
+      remaining: 1,
+    ),
+  );
+
+  RxDouble totalLeave = 0.0.obs;
+
+  RxList<Leaves> leaves = RxList<Leaves>([]);
+  int _currentPage = 0;
+
+  final casualDays = 18.obs;
+  final sickDays = 12.obs;
+  final privilegeDays = 10.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadleaves();
+    _getLeaveStates();
+    scrollController.addListener(_onScroll);
+  }
+
   void setDate(DateTime date) {
     selectedDate.value = date;
   }
 
-  void updateValue(String? value) {
-    selectedValue.value = value;
-  }
-
   @override
   void onClose() {
-    purposeController.dispose();
+    scrollController.dispose();
     super.onClose();
   }
 
-  // --- Submit Leave Logic ---
-  var selectedCategory = "".obs;
-  var selectedDuration = "".obs;
-  var taskDelegation = "".obs;
-  var contactController = TextEditingController();
-  var descriptionController = TextEditingController();
+  Future<void> _getLeaveStates() async {
+    final response = await THttpHelper.getRequest(
+      API.getApis.getLeaveEntitlement(
+        AuthController.instance.authUser!.userDetails.id,
+      ),
+    );
+    if (response == null) {
+      return;
+    }
 
-  // Sample data
-  List<Map<String, dynamic>> get leaves => [
-    {
-      "submitDate": "18 September 2024",
-      "range": "20 Sept - 22 Sept",
-      "totalDays": 2,
-      "status": "Pending",
-      "reviewedDate": "",
-      "reviewer": "",
-    },
-    {
-      "submitDate": "18 September 2024",
-      "range": "20 Sept - 22 Sept",
-      "totalDays": 2,
-      "status": "Approved",
-      "reviewedDate": "19 Sept 2024",
-      "reviewer": "Elaine",
-    },
-    {
-      "submitDate": "18 September 2024",
-      "range": "25 Sept",
-      "totalDays": 1,
-      "status": "Approved",
-      "reviewedDate": "19 Sept 2024",
-      "reviewer": "Elaine",
-    },
-    {
-      "submitDate": "18 September 2024",
-      "range": "10 Oct",
-      "totalDays": 1,
-      "status": "Rejected",
-      "reviewedDate": "19 Sept 2024",
-      "reviewer": "Sandeep",
-    },
-  ];
-
-  // void submitLeave() {
-  //   // Basic validation logic
-  //   if (selectedCategory.isEmpty || selectedDuration.isEmpty) {
-  //     Get.snackbar(
-  //       "Error",
-  //       "Please fill in the required fields",
-  //       snackPosition: SnackPosition.BOTTOM,
-  //       backgroundColor: Colors.redAccent,
-  //       colorText: Colors.white,
-  //     );
-  //     return;
-  //   }
-
-  //   // Simulate API Call
-  //   Get.back(); // Go back after success
-  //   Get.snackbar(
-  //     "Success",
-  //     "Leave request submitted successfully!",
-  //     snackPosition: SnackPosition.BOTTOM,
-  //     backgroundColor: Colors.green,
-  //     colorText: Colors.white,
-  //   );
-  // }
-
-  void setLeaveType(LeaveType type) {
-    selectedLeaveType.value = type;
-
-    // Reset half day selections based on type
-    if (type == LeaveType.fullDay) {
-      startHalfDay.value = null;
-      endHalfDay.value = null;
-      endDate.value = null;
-    } else if (type == LeaveType.halfDay) {
-      startHalfDay.value = HalfDaySession.firstHalf;
-      endHalfDay.value = null;
-      endDate.value = null;
-    } else {
-      // multipleDays - initialize end date
-      endDate.value = startDate.value.add(Duration(days: 1));
+    final List<dynamic> data = response['data'] ?? [];
+    if (data.isEmpty) {
+      return;
+    }
+    for (var d in data) {
+      if (d["leave_type_name"] == "Casual Leave") {
+        casualLeaveEntitlements.value = LeaveEntitlement.fromJson(d);
+        totalLeave.value += casualLeaveEntitlements.value.remaining;
+      }
+      if (d["leave_type_name"] == "Earned Leave") {
+        earnedLeaveEntitlements.value = LeaveEntitlement.fromJson(d);
+        totalLeave.value += earnedLeaveEntitlements.value.remaining;
+      }
+      if (d["leave_type_name"] == "Floating Holiday") {
+        floatingHolidayEntitlements.value = LeaveEntitlement.fromJson(d);
+        totalLeave.value += floatingHolidayEntitlements.value.remaining;
+      }
     }
   }
 
-  void setStartDate(DateTime date) {
-    startDate.value = date;
+  Future<void> _loadleaves({bool isLoadMore = false}) async {
+    try {
+      if (!isLoadMore) {
+        isRefreshing.value = true;
+        _currentPage = 1;
+      }
 
-    // If end date is before start date, update it
-    if (endDate.value != null && endDate.value!.isBefore(date)) {
-      endDate.value = date.add(Duration(days: 1));
+      final response = await THttpHelper.getRequest(
+        API.getApis.getLeave(AuthController.instance.authUser!.userDetails.id),
+        queryParams: {
+          "page": _currentPage.toString(),
+          "limit": _pageSize.toString(),
+          "status": selectedStatus.value.toLowerCase(),
+        },
+      );
+
+      if (response == null) return;
+
+      final List<dynamic> data = response['data'] ?? [];
+      final pagination = response['pagination'];
+
+      final newLeaves = leavesFromJson(jsonEncode(data));
+
+      if (isLoadMore) {
+        leaves.addAll(newLeaves);
+      } else {
+        leaves.value = newLeaves;
+      }
+
+      // ✅ Pagination handling from backend
+      hasMore.value = pagination['hasNext'] ?? false;
+    } catch (e) {
+      debugPrint("Error loading leaves: $e");
+    } finally {
+      isLoadingMore.value = false;
+      isRefreshing.value = false;
     }
   }
 
-  void setEndDate(DateTime date) {
-    endDate.value = date;
+  void _onScroll() {
+    if (scrollController.position.pixels >=
+            scrollController.position.maxScrollExtent - 100 &&
+        !isLoadingMore.value &&
+        hasMore.value) {
+      loadMore();
+    }
   }
 
-  void setStartHalfDay(HalfDaySession session) {
-    startHalfDay.value = session;
+  Future<void> loadMore() async {
+    if (isLoadingMore.value || !hasMore.value) return;
+
+    isLoadingMore.value = true;
+    _currentPage++;
+
+    await _loadleaves(isLoadMore: true);
   }
 
-  void setEndHalfDay(HalfDaySession? session) {
-    endHalfDay.value = session;
+  Future<void> refresh() async {
+    hasMore.value = true;
+    await _loadleaves(isLoadMore: false);
+    await _getLeaveStates();
   }
 
-  LeaveDuration getLeaveDuration() {
-    return LeaveDuration(
-      startDate: startDate.value,
-      endDate: endDate.value,
-      leaveType: selectedLeaveType.value,
-      startHalfDay: startHalfDay.value,
-      endHalfDay: endHalfDay.value,
+  void applyFilter(String status, DateTime? date) {
+    selectedStatus.value = status;
+    selectedDateForFilter.value = date;
+
+    hasMore.value = true;
+    _currentPage = 1;
+
+    _loadleaves();
+  }
+
+  void resetFilter() {
+    applyFilter('All', null);
+  }
+
+  Color statusColor(String status) {
+    switch (status) {
+      case 'Approved':
+        return const Color(0xFF00C17C);
+      case 'Pending':
+        return const Color(0xFFFF9800);
+      case 'Cancelled':
+        return const Color(0xFFFF4D4D);
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Future<void> cancelLeave(Leaves leave) async {
+    final response = await THttpHelper.postRequest(API.postApis.cancelLeave, {
+      "leave_application_id": leave.id,
+    });
+    if (response == null) return;
+    await refresh();
+    TLoaders.successSnackBar(
+      title: "Success",
+      message: "Leave Cancelled Successfully",
     );
   }
-
-  // Submit leave method
-  void submitLeave() {
-    final leaveDuration = getLeaveDuration();
-
-    print("Leave Submitted:");
-    print("Total Days: ${leaveDuration.getTotalDays()}");
-    print("Leave Data: ${leaveDuration.toJson()}");
-
-    final data = {
-      "type": selectedValue.value,
-      "startDate": startDate.value.toString(),
-      "endDate": endDate.value.toString(),
-      "emergencyContact": emergencyContact.value,
-      "purpose": purposeController.text,
-      "submitDate": DateTime.now().toString(),
-      "range": leaveDuration.getDescription(),
-      "totalDays": leaveDuration.getTotalDays(),
-      "status": "Pending",
-      "reviewedDate": "",
-      "reviewer": "",
-    };
-
-    log(data.toString());
-
-    Get.snackbar(
-      "Success",
-      "Leave submitted for ${leaveDuration.getTotalDays()} days",
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  }
-
-  // Sample data
-  List<Map<String, dynamic>> get approvedLeaves => [
-    {
-      "submitDate": "18 September 2024",
-      "range": "20 Sept - 22 Sept",
-      "totalDays": 2,
-      "approvedDate": "19 Sept 2024",
-      "approver": "Elaine",
-    },
-  ];
 }

@@ -11,11 +11,13 @@ class CustomBlurBottomSheet extends StatelessWidget {
     BuildContext context, {
     required Widget widget,
     bool isDismissible = true,
+    bool enaleDrag = true,
     Function()? onClosed,
   }) {
     showModalBottomSheet(
       isDismissible: isDismissible,
       showDragHandle: false,
+      enableDrag: enaleDrag,
       context: context,
       backgroundColor: Colors.transparent,
 

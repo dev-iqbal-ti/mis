@@ -1,10 +1,8 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:dronees/controllers/auth_controller.dart';
 import 'package:dronees/features/authorized/equipment/models/assign_equipment.dart';
-import 'package:dronees/features/authorized/equipment/models/equipment.dart';
 import 'package:dronees/features/authorized/equipment/screens/assign_equipment_screen.dart';
 import 'package:dronees/utils/helpers/image_picker_helper.dart';
 import 'package:dronees/utils/http/api.dart';
@@ -54,9 +52,18 @@ class EquipmentController extends GetxController {
     );
   }
 
+  //   'DJI Air 3 UAV & Accessories'
+  // 'DJI Mavic 4 Pro UAV & Accessories'
+  // 'South Galaxy G1 Pro DGPS'
+  // 'Spectra SP85 DGPS (Unit 1)'
+  // 'Spectra SP85 DGPS (Unit II)'
+  // 'ideaForge Q6 UAV & Accessories'
+  // 'ideaForge Q6 V2 UAV & Accessories'
+  // 'ideaForge RYNO UAV & Accessories'
+
   Future<void> pickReturnImage(FormFieldState<File> field) async {
     final file = await ImageUploadService.pickImageFromSource(
-      ImageSource.gallery,
+      ImageSource.camera,
     );
 
     if (file != null) {

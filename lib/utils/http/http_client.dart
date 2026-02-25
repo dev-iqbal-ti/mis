@@ -3,17 +3,19 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dronees/controllers/auth_controller.dart';
+import 'package:dronees/utils/helpers/network_manager.dart';
 import 'package:dronees/utils/logging/logger.dart';
 import 'package:dronees/utils/popups/loaders.dart';
 import 'package:http/http.dart' as http;
 
 class THttpHelper {
-  static const String _baseUrl = "http://localhost:4000/api";
-  // static const String _baseUrl = "http://10.0.2.2:4000/api";
-  // static const String _baseUrl = String.fromEnvironment(
-  //   'BACKEND_URL',
-  //   defaultValue: '',
-  // );
+  static const String _ios_baseUrl = "http://localhost:4000/api";
+  static const String _android_baseUrl = "http://10.0.2.2:4000/api";
+
+  // static const String _baseUrl = "http://mis-api.69.62.82.35.sslip.io/api";
+  static final String _baseUrl = Platform.isIOS
+      ? _ios_baseUrl
+      : _android_baseUrl;
 
   static Map<String, String> get headers {
     return {
@@ -30,7 +32,10 @@ class THttpHelper {
     Map<String, dynamic>? queryParams,
     bool showError = true,
   }) async {
-    TLoggerHelper.customPrint(_baseUrl);
+    if ((await NetworkManager.instance.isConnected()) == false) {
+      TLoaders.errorSnackBar(title: "Error", message: "No Internet Connection");
+      return null;
+    }
 
     TLoggerHelper.customPrint("In get request $endpoint");
 
@@ -55,7 +60,11 @@ class THttpHelper {
     Map<String, dynamic>? queryParams,
     bool showError = true,
   }) async {
-    TLoggerHelper.customPrint(_baseUrl);
+    if ((await NetworkManager.instance.isConnected()) == false) {
+      TLoaders.errorSnackBar(title: "Error", message: "No Internet Connection");
+      return null;
+    }
+
     TLoggerHelper.customPrint("In PUT request $endpoint");
 
     try {
@@ -82,7 +91,10 @@ class THttpHelper {
     String endpoint,
     dynamic data,
   ) async {
-    TLoggerHelper.customPrint(_baseUrl);
+    if ((await NetworkManager.instance.isConnected()) == false) {
+      TLoaders.errorSnackBar(title: "Error", message: "No Internet Connection");
+      return null;
+    }
     TLoggerHelper.customPrint("In post request $endpoint");
     try {
       final response = await http.post(
@@ -90,7 +102,7 @@ class THttpHelper {
         headers: headers,
         body: jsonEncode(data),
       );
-      TLoggerHelper.customPrint(response.body, endpoint);
+
       return _handleResponse(response, endpoint, true);
     } catch (e) {
       log(e.toString());
@@ -102,6 +114,13 @@ class THttpHelper {
 
   static Future<Map<String, dynamic>?> deleteRequest(String endpoint) async {
     try {
+      if ((await NetworkManager.instance.isConnected()) == false) {
+        TLoaders.errorSnackBar(
+          title: "Error",
+          message: "No Internet Connection",
+        );
+        return null;
+      }
       final response = await http.delete(
         Uri.parse('$_baseUrl$endpoint'),
         headers: headers,
@@ -115,52 +134,15 @@ class THttpHelper {
     }
   }
 
-  // static Future<Map<String, dynamic>?> formDataRequest(
-  //   String endpoint,
-  //   File? file,
-  //   Map<String, dynamic> data,
-  // ) async {
-  //   try {
-  //     var uri = Uri.parse('$_baseUrl$endpoint');
-
-  //     var request = http.MultipartRequest('POST', uri);
-  //     if (file != null) {
-  //       request.files.add(
-  //         await http.MultipartFile.fromPath(
-  //           'image',
-  //           file.path,
-  //           filename: file.path.split('/').last,
-  //         ),
-  //       );
-  //     }
-  //     // log(file.path.split('/').last);
-  //     request.headers.addAll(headers);
-  //     request.fields.addAll(
-  //       data.map((key, value) => MapEntry(key, value.toString())),
-  //     );
-
-  //     var response = await request.send();
-  //     var responseData = await response.stream.bytesToString();
-
-  //     TLoggerHelper.customPrint(responseData, endpoint);
-
-  //     if (response.statusCode == 200 || response.statusCode == 201) {
-  //       return jsonDecode(responseData);
-  //     }
-  //     return null;
-  //   } catch (e) {
-  //     log(e.toString());
-  //     TLoggerHelper.customPrint(e);
-  //     TLoaders.errorSnackBar(title: "Error", message: "Something went wrong");
-  //     return null;
-  //   }
-  // }
-
   static Future<Map<String, dynamic>?> formDataRequest(
     String endpoint,
     File? file,
     Map<String, dynamic> data,
   ) async {
+    if ((await NetworkManager.instance.isConnected()) == false) {
+      TLoaders.errorSnackBar(title: "Error", message: "No Internet Connection");
+      return null;
+    }
     try {
       final dio = Dio(BaseOptions(baseUrl: _baseUrl));
 
@@ -219,6 +201,10 @@ class THttpHelper {
     required File file,
     required Function(double) onProgress,
   }) async {
+    if ((await NetworkManager.instance.isConnected()) == false) {
+      TLoaders.errorSnackBar(title: "Error", message: "No Internet Connection");
+      return null;
+    }
     try {
       TLoggerHelper.customPrint(endpoint);
       final dio = Dio(BaseOptions(baseUrl: _baseUrl));
@@ -255,27 +241,6 @@ class THttpHelper {
     }
   }
 
-  // static Future<Map<String, dynamic>?> postDioRequest(
-  //   String endpoint,
-  //   dynamic data,
-  // ) async {
-  //   TLoggerHelper.customPrint("In post request $endpoint");
-  //   final dio = Dio();
-  //   try {
-  //     Response response = await dio.post(
-  //       '$_baseUrl$endpoint',
-  //       options: Options(headers: headers),
-  //       data: data,
-  //     );
-  //     TLoggerHelper.customPrint(response.data, endpoint);
-  //     // return _handleResponse(response, endpoint, true);
-  //   } catch (e) {
-  //     TLoggerHelper.customPrint(e);
-  //     TLoaders.errorSnackBar(title: "Error", message: "Something went wrong");
-  //     return null;
-  //   }
-  // }
-
   // Handle the HTTP response
   static Map<String, dynamic>? _handleResponse(
     http.Response response,
@@ -292,13 +257,16 @@ class THttpHelper {
         "$endpoint ${response.statusCode}",
         showError,
       );
+      if (data["message"] != null && data["message"] == "Invalid session") {
+        AuthController.instance.logout();
+        return null;
+      }
       return null;
     }
   }
 
   static void _showErrorToast(String body, String? endpoint, bool showError) {
     final Map<String, dynamic> data = jsonDecode(body);
-    TLoggerHelper.customPrint(data, endpoint);
 
     String? message =
         data["error"] ?? data["message"] ?? "Something went wrong";

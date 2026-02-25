@@ -218,8 +218,10 @@ class SubmitTravelAllowance extends StatelessWidget {
                               label: "Tour Type",
                               items: _tourTypes,
                               selectedValue: controller.tourType,
-                              onSelect: (val) =>
-                                  controller.tourType.value = val,
+                              onSelect: (val, state) {
+                                controller.tourType.value = val;
+                                state.didChange(val);
+                              },
                             ),
 
                             const SizedBox(height: TSizes.spaceBtwItems),

@@ -1,5 +1,6 @@
 import 'package:dronees/bottom_navigator.dart';
 import 'package:dronees/controllers/auth_controller.dart';
+import 'package:dronees/features/unauthorized/screens/onboarding_screen.dart';
 import 'package:dronees/routes/appRoute.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
@@ -21,12 +22,9 @@ class AuthRepository extends GetxController {
 
     if (data == "User") {
       Get.offAll(() => BottomNavigator());
-    } else if (data == "Name Required") {
-      // Get.offAll(() => const LetsGetStartedScreen());
     } else {
       print("No User");
-      // Get.offAllNamed("/welcome");
-      // Get.offAll(() => const WelcomeScreen());
+      Get.offAll(() => const OnboardingScreen());
     }
     await Future.delayed(const Duration(milliseconds: 500));
     FlutterNativeSplash.remove();

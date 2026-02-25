@@ -12,8 +12,10 @@ class LoginController extends GetxController {
   static LoginController get instance => Get.find();
   final formKey = GlobalKey<FormState>();
 
-  final emailController = TextEditingController(text: "jesmibano@gmail.com");
-  final passwordController = TextEditingController(text: "Pass@123");
+  final emailController = TextEditingController(
+    text: "iqbal.khan786@gmail.com",
+  );
+  final passwordController = TextEditingController(text: "Password@123");
   RxBool obscure = RxBool(true);
   RxBool remember = RxBool(true);
 

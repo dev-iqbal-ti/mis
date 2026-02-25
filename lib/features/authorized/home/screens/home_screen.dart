@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dronees/features/authorized/attendance/screens/attendance_screen.dart';
+import 'package:dronees/features/authorized/home/controllers/home_controller.dart';
 import 'package:dronees/models/quick_action.dart';
 import 'package:dronees/utils/constants/contants.dart';
 import 'package:dronees/utils/constants/sizes.dart';
@@ -9,20 +10,12 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
-class MyWidget extends StatelessWidget {
-  const MyWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder();
-  }
-}
-
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
   final _isCheckedIn = false;
   @override
   Widget build(BuildContext context) {
+    final HomeController controller = Get.put(HomeController());
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: AnnotatedRegion<SystemUiOverlayStyle>(
@@ -36,7 +29,7 @@ class HomeScreen extends StatelessWidget {
 
             slivers: [
               // Custom App Bar
-              SliverToBoxAdapter(child: _buildHeader()),
+              SliverToBoxAdapter(child: _buildHeader(controller)),
 
               // Quick Stats Section
               SliverToBoxAdapter(child: _buildQuickStats()),
@@ -67,7 +60,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(HomeController controller) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         TSizes.defaultPadding,
@@ -96,9 +89,10 @@ class HomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Center(
+            child: Center(
               child: Text(
-                'JD',
+                // '${controller.fullName.split(' ')[0][0]}${controller.fullName.split(' ')[1][0]}',
+                controller.initails.value,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -122,8 +116,8 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'John Doe',
+                Text(
+                  controller.fullName.value,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -134,45 +128,46 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
           ),
+
           // Notification Bell
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                Center(
-                  child: Icon(
-                    Icons.notifications_outlined,
-                    color: Colors.grey.shade700,
-                    size: 22,
-                  ),
-                ),
-                Positioned(
-                  right: 10,
-                  top: 10,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFF6B6B),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Container(
+          //   width: 44,
+          //   height: 44,
+          //   decoration: BoxDecoration(
+          //     color: Colors.white,
+          //     borderRadius: BorderRadius.circular(14),
+          //     boxShadow: [
+          //       BoxShadow(
+          //         color: Colors.black.withOpacity(0.04),
+          //         blurRadius: 8,
+          //         offset: const Offset(0, 2),
+          //       ),
+          //     ],
+          //   ),
+          //   child: Stack(
+          //     children: [
+          //       Center(
+          //         child: Icon(
+          //           Icons.notifications_outlined,
+          //           color: Colors.grey.shade700,
+          //           size: 22,
+          //         ),
+          //       ),
+          //       Positioned(
+          //         right: 10,
+          //         top: 10,
+          //         child: Container(
+          //           width: 8,
+          //           height: 8,
+          //           decoration: const BoxDecoration(
+          //             color: Color(0xFFFF6B6B),
+          //             shape: BoxShape.circle,
+          //           ),
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
         ],
       ),
     );

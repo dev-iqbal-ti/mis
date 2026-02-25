@@ -44,15 +44,59 @@ class SubmitTravelAllowanceController extends GetxController {
   }
 
   Widget sourceTile(IconData icon, String title, ImageSource source) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: const Color(0xFFF1EFFF),
-        child: Icon(icon, color: const Color(0xFF6C5CE7)),
+    return Expanded(
+      child: InkWell(
+        onTap: () => Get.back(result: source),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFF1EFFF), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6C5CE7).withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: const Color(0xFFF1EFFF),
+                child: Icon(icon, color: const Color(0xFF6C5CE7), size: 30),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Color(0xFF2D3436),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      onTap: () {
-        Get.back(result: source);
-      },
+    );
+  }
+
+  // How to call it in your BottomSheet/Dialog:
+  Widget buildSourcePicker() {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Row(
+        children: [
+          sourceTile(Icons.camera_alt_outlined, "Camera", ImageSource.camera),
+          const SizedBox(width: 16), // Space between buttons
+          sourceTile(Icons.image_outlined, "Gallery", ImageSource.gallery),
+        ],
+      ),
     );
   }
 
@@ -72,9 +116,13 @@ class SubmitTravelAllowanceController extends GetxController {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
-
-            sourceTile(Icons.camera_alt, "Camera", ImageSource.camera),
-            sourceTile(Icons.photo_library, "Gallery", ImageSource.gallery),
+            Row(
+              children: <Widget>[
+                sourceTile(Icons.camera_alt, "Camera", ImageSource.camera),
+                const SizedBox(width: 16),
+                sourceTile(Icons.photo_library, "Gallery", ImageSource.gallery),
+              ],
+            ),
             const SizedBox(height: 10),
           ],
         ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class LeaveCalendarController extends GetxController {
+  static LeaveCalendarController get instance => Get.find();
   RxList<SelectedDay> selectedDays = <SelectedDay>[].obs;
   Rx<DateTime> displayedMonth = DateTime.now().obs;
 

@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:dronees/features/authorized/attendance/widgets/input_field.dart';
 import 'package:dronees/features/unauthorized/controllers/login_controller.dart';
 import 'package:dronees/utils/constants/colors.dart';
+import 'package:dronees/utils/constants/image_strings.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:dronees/utils/constants/text_strings.dart';
 import 'package:dronees/utils/validators/validation.dart';
@@ -34,7 +35,8 @@ class LoginScreen extends StatelessWidget {
           child: Column(
             children: [
               const Spacer(),
-
+              Image.asset(TImages.logo, height: 150),
+              const Spacer(flex: 3),
               Stack(
                 clipBehavior: Clip.none,
                 children: [

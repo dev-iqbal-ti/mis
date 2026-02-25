@@ -101,8 +101,10 @@ class FieldTaskScreen extends StatelessWidget {
                             label: "Select Project",
                             items: controller.projects,
                             selectedValue: controller.selectedProject,
-                            onSelect: (val) =>
-                                controller.selectedProject.value = val,
+                            onSelect: (val, state) {
+                              controller.selectedProject.value = val;
+                              state.didChange(val);
+                            },
                             icon: Iconsax.folder,
                           ),
 
@@ -120,8 +122,10 @@ class FieldTaskScreen extends StatelessWidget {
                                 AutovalidateMode.onUserInteraction,
                             items: controller.workTypes,
                             selectedValue: controller.selectedWorkType,
-                            onSelect: (val) =>
-                                controller.selectedWorkType.value = val,
+                            onSelect: (val, state) {
+                              controller.selectedWorkType.value = val;
+                              state.didChange(val);
+                            },
                             icon: Iconsax.setting_4,
                           ),
 
@@ -248,8 +252,10 @@ class FieldTaskScreen extends StatelessWidget {
                             label: "Nature of Job",
                             items: controller.jobNatureList,
                             selectedValue: controller.selectedNatureOfJob,
-                            onSelect: (val) =>
-                                controller.selectedNatureOfJob.value = val,
+                            onSelect: (val, state) {
+                              controller.selectedNatureOfJob.value = val;
+                              state.didChange(val);
+                            },
                             icon: Iconsax.briefcase,
                           ),
                         ],
@@ -382,7 +388,7 @@ class FieldTaskScreen extends StatelessWidget {
     FieldTaskController controller,
   ) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(TSizes.defaultPadding),
       color: Colors.white,
       child: SafeArea(
         child: SizedBox(

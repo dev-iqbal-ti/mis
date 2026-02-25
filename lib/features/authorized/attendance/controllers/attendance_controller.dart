@@ -1,26 +1,33 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'package:camera/camera.dart';
+
 import 'package:dronees/controllers/auth_controller.dart';
-import 'package:dronees/utils/helpers/add_water_mark.dart';
-import 'package:dronees/utils/helpers/image_picker_helper.dart';
+import 'package:dronees/features/authorized/money_receive/models/projects_model.dart';
+
 import 'package:dronees/utils/http/api.dart';
 import 'package:dronees/utils/http/http_client.dart';
 import 'package:dronees/utils/logging/logger.dart';
 import 'package:dronees/utils/popups/loaders.dart';
+import 'package:dronees/widgets/custom_alert_sheet.dart';
+import 'package:dronees/widgets/custom_blur_bottom_sheet.dart';
 import 'package:get/get.dart' hide FormData, MultipartFile;
-import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 import 'package:intl/intl.dart';
 import 'package:latlong_to_place/latlong_to_place.dart';
-
 import 'package:dronees/features/authorized/attendance/models/attendance_record.dart';
 import 'package:flutter/Material.dart';
 import 'package:get/get.dart';
 
 class AttendanceController extends GetxController {
   static AttendanceController get instance => Get.find();
+
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  GlobalKey driverFormKey = GlobalKey<FormState>();
+  Timer? _durationTimer;
   // Observable for current attendance
   final Rx<AttendanceRecord?> currentAttendance = Rx<AttendanceRecord?>(null);
 
@@ -43,21 +50,30 @@ class AttendanceController extends GetxController {
   // Show acknowledgment card
   final RxBool showAcknowledgment = false.obs;
 
-  var currentPosition = Rxn<gmaps.LatLng>();
-  RxString locationName = "".obs;
-  RxString currentDate = "".obs;
-  var isReady = false.obs;
-  final service = GeocodingService();
+  final RxBool isIdle = false.obs;
+  RxList<ProjectsModel> projects = <ProjectsModel>[].obs;
+  Rxn<ProjectsModel> selectedProject = Rxn<ProjectsModel>(
+    null,
+  ); // Rxn<ProjectsModel>
+
   PlaceInfo? place;
   var selfieFile = Rxn<File>();
+
+  RxString totalWorkingHoursThisMonth = RxString("00:00:00");
+  RxString averageDailyHoursThisMonth = RxString("00:00:00");
 
   @override
   void onInit() {
     super.onInit();
-
-    // _loadData();
     _loadHistory();
+    _loadAnalytics();
     _startDurationUpdater();
+  }
+
+  @override
+  void onClose() {
+    _durationTimer?.cancel(); // VERY IMPORTANT
+    super.onClose();
   }
 
   Future<void> refreshData() async {
@@ -65,87 +81,41 @@ class AttendanceController extends GetxController {
     await _loadHistory();
   }
 
-  void initMarkScreen() {
-    getLocation();
-    final DateTime now = DateTime.now();
-    final DateFormat formatter = DateFormat('dd MMMM yyyy');
-    currentDate.value = formatter.format(now);
-  }
+  Future<void> _loadProjects() async {
+    final response = await THttpHelper.getRequest(API.getApis.getProjects);
 
-  Future<void> getLocation() async {
-    if (!isReady.value) {
-      isLoading.value = true;
-    }
-    final info = await service.getCurrentPlaceInfo();
-    final place = await service.getPlaceInfo(info.latitude, info.longitude);
-    locationName.value = place.formattedAddress;
-    currentPosition.value = gmaps.LatLng(info.latitude, info.longitude);
-    isReady.value = true;
-    isLoading.value = false;
-  }
-
-  Future<void> takeSelfieAndTag() async {
-    final pickImage = await ImageUploadService.takePhoto(xFile: true);
-    if (pickImage == null || pickImage is! XFile) return;
-    final picture = pickImage;
-
-    final raw = File(picture.path);
-
-    final stamped = await addWatermark(
-      originalImage: raw,
-      address: locationName.value,
-      latLng:
-          "Lat: ${currentPosition.value!.latitude} long: ${currentPosition.value!.longitude}",
-      dateTime: DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
-    );
-    selfieFile.value = stamped;
-  }
-
-  Future<void> clockIn() async {
-    try {
-      isLoading.value = true;
-
-      // Create FormData
-      final dateTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-      final Map<String, String> data = {
-        "address": locationName.value,
-        "latitude": currentPosition.value!.latitude.toString(),
-        "longitude": currentPosition.value!.longitude.toString(),
-        "punch_in_time": dateTime,
-        "punch_mode": "MOBILE",
-        "date": DateFormat('yyyy-MM-dd').format(DateTime.now()),
-        "created_at": dateTime,
-      };
-      final response = await THttpHelper.formDataRequest(
-        API.postApis.markPunchIn,
-        selfieFile.value!,
-        data,
-      );
-
-      if (response == null) {
-        isLoading.value = false;
-        return;
-      }
-
-      await _getAttendanceById(response["data"]["insertId"]);
-      isLoading.value = false;
-
-      Get.back();
-    } catch (e) {
-      log(e.toString());
-    }
-  }
-
-  Future<void> _getAttendanceById(int id) async {
-    final response = await THttpHelper.getRequest(
-      API.getApis.getPunchingDataById(id),
-    );
     if (response == null) return;
-    log('log response in getAttendanceById :${response["data"].toString()}');
-    _loadData(AttendanceRecord.fromJson(response["data"]));
+    if (response["data"].isEmpty) {
+      CustomBlurBottomSheet.show(
+        Get.context!,
+        widget: CustomAlertSheet(
+          icon: Iconsax.car,
+          title: "No Projects Found",
+          message: "No projects found. Please contact your manager.",
+          buttonText: "Go Back",
+          onAction: () {
+            Get.back();
+            Get.back();
+          },
+        ),
+        isDismissible: false,
+        enaleDrag: false,
+      );
+      return;
+    }
+    projects.value = projectsModelFromJson(jsonEncode(response["data"]));
   }
 
-  Future<void> _loadData(AttendanceRecord? record) async {
+  // Future<void> _getAttendanceById(int id) async {
+  //   final response = await THttpHelper.getRequest(
+  //     API.getApis.getPunchingDataById(id),
+  //   );
+  //   if (response == null) return;
+  //   log('log response in getAttendanceById :${response["data"].toString()}');
+  //   _loadData(AttendanceRecord.fromJson(response["data"]));
+  // }
+
+  Future<void> loadData(AttendanceRecord? record) async {
     if (record == null) {
       currentAttendance.value = null;
       todayCompletedRecord.value = null;
@@ -162,6 +132,17 @@ class AttendanceController extends GetxController {
     showAcknowledgment.value = true;
   }
 
+  Future<void> _loadAnalytics() async {
+    final response = await THttpHelper.getRequest(API.getApis.getAnalytics);
+    if (response == null) return;
+    TLoggerHelper.customPrint(response["data"].toString());
+    totalWorkingHoursThisMonth.value =
+        response["data"]["totalWorkingHoursThisMonth"].toString();
+    averageDailyHoursThisMonth.value =
+        response["data"]["averageDailyHoursThisMonth"].toString();
+    // analytics.value = Analytics.fromJson(response["data"]);
+  }
+
   Future<void> _loadHistory() async {
     isLoadingHistory.value = true;
     final response = await THttpHelper.getRequest(
@@ -171,6 +152,7 @@ class AttendanceController extends GetxController {
     );
     isLoadingHistory.value = false;
     if (response == null) return;
+    if (response["data"] == null) return;
     log(jsonEncode(response["data"]));
     attendanceHistory.value = attendanceFromJson(response["data"]);
     //  if today record found then then call
@@ -185,21 +167,16 @@ class AttendanceController extends GetxController {
         .toList();
     log(todayRecord.toString());
     if (todayRecord.isNotEmpty) {
-      _loadData(todayRecord.first);
+      loadData(todayRecord.first);
       attendanceHistory.removeAt(0);
     }
   }
 
-  // Start duration updater for active session
   void _startDurationUpdater() {
-    // Update duration every minute
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(minutes: 1));
+    _durationTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       if (currentAttendance.value?.isActive == true) {
-        // Force update to refresh duration display
         currentAttendance.refresh();
       }
-      return true; // Continue loop
     });
   }
 
@@ -218,104 +195,54 @@ class AttendanceController extends GetxController {
   }
 
   // Toggle Idle State
-  void toggleIdleState() {
-    // TODO: Write logic to toggle idle state
-    // if (currentAttendance.value == null) return;
-
-    // final newIdleState = !currentAttendance.value!.idleState;
-    // currentAttendance.value = currentAttendance.value!.copyWith(
-    //   idleState: newIdleState,
-    // );
-
-    // // In real app, update API
-    // // await AttendanceAPI.updateIdleState(newIdleState);
-
-    // Get.snackbar(
-    //   newIdleState ? 'Idle Mode ON' : 'Idle Mode OFF',
-    //   newIdleState
-    //       ? 'You are now in idle mode. Remember to stay active!'
-    //       : 'You are back to active mode. Keep up the good work!',
-    //   snackPosition: SnackPosition.BOTTOM,
-    //   backgroundColor: newIdleState
-    //       ? const Color(0xFFFF9800)
-    //       : const Color(0xFF00B894),
-    //   colorText: Colors.white,
-    //   icon: Icon(
-    //     newIdleState ? Icons.pause_circle : Icons.play_circle,
-    //     color: Colors.white,
-    //   ),
-    //   margin: const EdgeInsets.all(20),
-    //   borderRadius: 12,
-    //   duration: const Duration(seconds: 2),
-    // );
+  Future<void> toggleIdleState(
+    BuildContext context,
+    bool status,
+    Widget widget,
+  ) async {
+    if (projects.isEmpty) {
+      _loadProjects();
+    }
+    isIdle.value = status;
+    CustomBlurBottomSheet.show(
+      context,
+      widget: widget,
+      isDismissible: false,
+      enaleDrag: false,
+    );
   }
 
-  // Punch In
-  // Future<void> punchIn() async {
-  //   if (!canPunchInToday) {
-  //     Get.snackbar(
-  //       'Already Marked',
-  //       'You have already completed attendance for today!',
-  //       snackPosition: SnackPosition.BOTTOM,
-  //       backgroundColor: const Color(0xFFFF9800),
-  //       colorText: Colors.white,
-  //       icon: const Icon(Icons.info, color: Colors.white),
-  //       margin: const EdgeInsets.all(20),
-  //       borderRadius: 12,
-  //     );
-  //     return;
-  //   }
+  Future<void> updateIdleStatus(AttendanceRecord record) async {
+    TLoggerHelper.customPrint("updateIdleStatus start");
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+    isLoading.value = true;
+    final data = {
+      "attendance_id": record.id,
+      'idle_state': isIdle.value,
+      'project_id': selectedProject.value?.id,
+    };
+    final response = await THttpHelper.postRequest(
+      API.postApis.updateIdleStatus,
+      data,
+    );
+    isLoading.value = false;
+    if (response == null) return;
 
-  //   try {
-  //     isProcessing.value = true;
+    TLoggerHelper.customPrint("updateIdleStatus end");
+    Get.back();
+    _getAttendanceById(record.id);
+  }
 
-  //     // Simulate getting location (replace with actual location service)
-  //     await Future.delayed(const Duration(seconds: 2));
-
-  //     // Create new attendance record
-  //     final newRecord = AttendanceRecord(
-  //       idleState: false,
-  //       latitude: 22.5726, // Replace with actual location
-  //       longitude: 88.3639,
-  //       address:
-  //           'Tech Park, Salt Lake Sector V, Kolkata', // Replace with geocoded address
-  //       photoUrl:
-  //           'https://via.placeholder.com/150', // Replace with actual photo
-  //       punchInTime: DateTime.now(),
-  //       punchOutTime: null,
-  //     );
-
-  //     currentAttendance.value = newRecord;
-
-  //     // In real app, send to API here
-  //     // await AttendanceAPI.punchIn(newRecord);
-
-  //     Get.snackbar(
-  //       'Success',
-  //       'Punched in successfully!',
-  //       snackPosition: SnackPosition.BOTTOM,
-  //       backgroundColor: const Color(0xFF00B894),
-  //       colorText: Colors.white,
-  //       icon: const Icon(Icons.check_circle, color: Colors.white),
-  //       margin: const EdgeInsets.all(20),
-  //       borderRadius: 12,
-  //       duration: const Duration(seconds: 2),
-  //     );
-  //   } catch (e) {
-  //     Get.snackbar(
-  //       'Error',
-  //       'Failed to punch in. Please try again.',
-  //       snackPosition: SnackPosition.BOTTOM,
-  //       backgroundColor: const Color(0xFFFF6B6B),
-  //       colorText: Colors.white,
-  //       icon: const Icon(Icons.error, color: Colors.white),
-  //       margin: const EdgeInsets.all(20),
-  //       borderRadius: 12,
-  //     );
-  //   } finally {
-  //     isProcessing.value = false;
-  //   }
-  // }
+  Future<void> _getAttendanceById(int id) async {
+    final response = await THttpHelper.getRequest(
+      API.getApis.getPunchingDataById(id),
+    );
+    if (response == null) return;
+    log('log response in getAttendanceById :${response["data"].toString()}');
+    loadData(AttendanceRecord.fromJson(response["data"]));
+  }
 
   // Punch Out
   Future<void> clockOut() async {
@@ -370,77 +297,17 @@ class AttendanceController extends GetxController {
 
   // Calculate total work hours for current month
   String get monthlyWorkHours {
-    final now = DateTime.now();
-    final monthRecords = attendanceHistory.where(
-      (record) =>
-          record.inTime.month == now.month && record.inTime.year == now.year,
-    );
-
-    int totalMinutes = 0;
-    for (var record in monthRecords) {
-      totalMinutes += record.workDuration.inMinutes;
-    }
-
-    // Add current session if active
-    if (currentAttendance.value?.isActive == true) {
-      totalMinutes += currentAttendance.value!.workDuration.inMinutes;
-    }
-
-    // Add today's completed record if exists
-    if (todayCompletedRecord.value != null) {
-      totalMinutes += todayCompletedRecord.value!.workDuration.inMinutes;
-    }
-
-    final hours = totalMinutes ~/ 60;
-    final minutes = totalMinutes % 60;
+    final time = totalWorkingHoursThisMonth.value.split(":");
+    final hours = time[0];
+    final minutes = time[1];
     return '${hours}h ${minutes}m';
-  }
-
-  // Get attendance percentage for current month
-  double get monthlyAttendancePercentage {
-    final now = DateTime.now();
-    final workingDaysInMonth = 22; // Average working days
-    final daysWorked =
-        attendanceHistory
-            .where(
-              (record) =>
-                  record.inTime.month == now.month &&
-                  record.inTime.year == now.year,
-            )
-            .length +
-        (currentAttendance.value != null ? 1 : 0) +
-        (todayCompletedRecord.value != null ? 1 : 0);
-
-    return (daysWorked / workingDaysInMonth * 100).clamp(0, 100);
   }
 
   // Get average work hours per day
   String get averageWorkHours {
-    if (attendanceHistory.isEmpty && todayCompletedRecord.value == null) {
-      return '0h 0m';
-    }
-
-    int totalMinutes = 0;
-    int completedDays = 0;
-
-    for (var record in attendanceHistory) {
-      if (record.outTime != null) {
-        totalMinutes += record.workDuration.inMinutes;
-        completedDays++;
-      }
-    }
-
-    // Add today's completed record
-    if (todayCompletedRecord.value != null) {
-      totalMinutes += todayCompletedRecord.value!.workDuration.inMinutes;
-      completedDays++;
-    }
-
-    if (completedDays == 0) return '0h 0m';
-
-    final avgMinutes = totalMinutes ~/ completedDays;
-    final hours = avgMinutes ~/ 60;
-    final minutes = avgMinutes % 60;
+    final time = averageDailyHoursThisMonth.value.split(":");
+    final hours = time[0];
+    final minutes = time[1];
     return '${hours}h ${minutes}m';
   }
 }

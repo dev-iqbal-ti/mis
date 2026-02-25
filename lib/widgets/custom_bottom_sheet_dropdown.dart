@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:dronees/utils/constants/colors.dart';
-import 'package:dronees/utils/constants/sizes.dart';
+
 import 'package:dronees/widgets/custom_blur_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,10 +9,11 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 class CustomBottomSheetDropdown<T> extends StatelessWidget {
   final IconData? icon;
+  final Color? color;
   final String label;
   final List<T> items;
   final Rxn<T> selectedValue;
-  final Function(T) onSelect;
+  final Function(T, FormFieldState<T> state) onSelect;
   final String? Function(T?)? validator;
   final AutovalidateMode autovalidateMode;
   final String? errorText;
@@ -36,6 +37,7 @@ class CustomBottomSheetDropdown<T> extends StatelessWidget {
     required this.displayText, // Required to show the object as string
     this.validator,
     this.icon,
+    this.color,
     this.autovalidateMode = AutovalidateMode.disabled,
     this.errorText,
     this.isSearchable = false,
@@ -88,11 +90,7 @@ class CustomBottomSheetDropdown<T> extends StatelessWidget {
                   child: Row(
                     children: [
                       if (icon != null) ...[
-                        Icon(
-                          icon,
-                          color: isSelected ? TColors.primary : Colors.grey,
-                          size: 20,
-                        ),
+                        Icon(icon, color: color ?? TColors.primary, size: 20),
                         const SizedBox(width: 12),
                       ],
                       Expanded(
@@ -260,8 +258,8 @@ class CustomBottomSheetDropdown<T> extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          onSelect(item);
-          state.didChange(item);
+          onSelect(item, state);
+          // state.didChange(item);
           Get.back();
         },
         borderRadius: BorderRadius.circular(12),

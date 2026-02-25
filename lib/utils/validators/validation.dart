@@ -233,4 +233,10 @@ class TValidator {
     if (value.length < 6) return 'Password must be at least 6 characters';
     return null;
   }
+
+  static String? confirmPasswordValidator(String? value, String? password) {
+    if (value == null || value.isEmpty) return 'Please enter confirm password';
+    if (value != password) return 'Password and confirm password do not match';
+    return null;
+  }
 }

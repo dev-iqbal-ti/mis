@@ -82,8 +82,10 @@ class AddMoneyReceiveScreen extends StatelessWidget {
                             label: "Select Project",
                             items: controller.projects,
                             selectedValue: controller.selectedProject,
-                            onSelect: (val) =>
-                                controller.selectedProject.value = val,
+                            onSelect: (val, state) {
+                              controller.selectedProject.value = val;
+                              state.didChange(val);
+                            },
                             icon: Iconsax.folder,
                           ),
                           const SizedBox(height: TSizes.spaceBtwItems),
@@ -133,8 +135,10 @@ class AddMoneyReceiveScreen extends StatelessWidget {
                               "Cheque",
                             ],
                             selectedValue: controller.selectedMode,
-                            onSelect: (val) =>
-                                controller.selectedMode.value = val,
+                            onSelect: (val, state) {
+                              controller.selectedMode.value = val;
+                              state.didChange(val);
+                            },
                             icon: Iconsax.card,
                           ),
 

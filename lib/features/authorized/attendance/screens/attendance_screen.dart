@@ -1,14 +1,20 @@
 import 'dart:io';
+import 'package:dronees/controllers/auth_controller.dart';
 import 'package:dronees/features/authorized/attendance/controllers/attendance_controller.dart';
 import 'package:dronees/features/authorized/attendance/models/attendance_record.dart';
 import 'package:dronees/features/authorized/attendance/screens/attendance_mark_screen.dart';
 import 'package:dronees/features/authorized/attendance/widgets/info_card.dart';
 import 'package:dronees/features/authorized/attendance/widgets/show_attendance_detail.dart';
+import 'package:dronees/features/authorized/money_receive/models/projects_model.dart';
 import 'package:dronees/utils/constants/colors.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:dronees/utils/constants/text_strings.dart';
-import 'package:dronees/utils/device/device_utility.dart';
+import 'package:dronees/utils/logging/logger.dart';
+import 'package:dronees/utils/validators/validation.dart';
+import 'package:dronees/widgets/custom_blur_bottom_sheet.dart';
+import 'package:dronees/widgets/custom_bottom_sheet_dropdown.dart';
 import 'package:dronees/widgets/submit_confirmation.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -24,7 +30,6 @@ class AttendanceScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: TColors.primary,
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -46,81 +51,78 @@ class AttendanceScreen extends StatelessWidget {
         title: _buildHeader(controller),
         systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
-      body: Stack(
-        children: [
-          Container(color: TColors.primary),
-          Container(
-            margin: EdgeInsets.only(
-              top:
-                  TDeviceUtils.getStatusBarHeight() +
-                  TDeviceUtils.getAppBarHeight() +
-                  20,
+      body: SizedBox.expand(
+        child: Container(
+          margin: EdgeInsets.only(top: TSizes.defaultPadding),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F9FA),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(32),
+              topRight: Radius.circular(32),
             ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(32),
-                topRight: Radius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5),
-                ),
-              ],
+            ],
+          ),
+          // child: Center(child: Text('Attendance Screen')),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(32),
+              topRight: Radius.circular(32),
             ),
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(32),
-                topRight: Radius.circular(32),
-              ),
-              child: RefreshIndicator(
-                onRefresh: controller.refreshData,
-                color: TColors.primary,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
+            child: RefreshIndicator(
+              onRefresh: controller.refreshData,
+              color: TColors.primary,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
 
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 24),
 
-                      /// Statistics
-                      _buildStatisticsSection(controller),
+                    /// Statistics
+                    _buildStatisticsSection(controller),
 
-                      const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                      /// Acknowledgment
-                      Obx(() {
-                        if (!controller.showAcknowledgment.value) {
-                          return const SizedBox.shrink();
-                        }
+                    /// Acknowledgment
+                    Obx(() {
+                      if (!controller.showAcknowledgment.value) {
+                        return Column(
+                          children: <Widget>[
+                            Obx(
+                              () =>
+                                  _buildCurrentSessionCard(context, controller),
+                            ),
 
-                        return _buildAcknowledgmentCard(controller);
-                      }),
+                            const SizedBox(height: 20),
 
-                      /// Current Session
-                      Obx(() => _buildCurrentSessionCard(controller)),
+                            /// Action Button
+                            Obx(() => _buildActionButton(context, controller)),
 
-                      const SizedBox(height: 20),
+                            const SizedBox(height: TSizes.spaceBtwSections),
+                          ],
+                        );
+                      }
 
-                      /// Action Button
-                      Obx(() => _buildActionButton(context, controller)),
+                      return _buildAcknowledgmentCard(controller);
+                    }),
 
-                      const SizedBox(height: TSizes.minSpaceBtw),
+                    /// History Section
+                    _buildHistorySection(controller),
 
-                      /// History Section
-                      _buildHistorySection(controller),
-
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -196,17 +198,6 @@ class AttendanceScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: Obx(
-              () => _buildStatCard(
-                icon: Iconsax.status_up,
-                label: 'Attendance',
-                value:
-                    '${controller.monthlyAttendancePercentage.toStringAsFixed(0)}%',
-                color: const Color(0xFFFF6B6B),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -489,7 +480,10 @@ class AttendanceScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCurrentSessionCard(AttendanceController controller) {
+  Widget _buildCurrentSessionCard(
+    BuildContext context,
+    AttendanceController controller,
+  ) {
     final current = controller.currentAttendance.value;
     final todayCompleted = controller.todayCompletedRecord.value;
 
@@ -725,11 +719,19 @@ class AttendanceScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
-              const SizedBox(height: 16),
-
-              // Idle State Toggle
-              _buildIdleToggle(controller, current),
+              if (AuthController
+                      .instance
+                      .authUser
+                      ?.userDetails
+                      .rolesDisplayNames !=
+                  "Driver")
+                Column(
+                  children: <Widget>[
+                    const SizedBox(height: 16),
+                    // Idle State Toggle
+                    _buildIdleToggle(context, controller, current),
+                  ],
+                ),
             ],
           ),
         ),
@@ -739,11 +741,12 @@ class AttendanceScreen extends StatelessWidget {
 
   // Idle State Toggle Widget
   Widget _buildIdleToggle(
+    BuildContext context,
     AttendanceController controller,
     AttendanceRecord record,
   ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(TSizes.minSpaceBtw),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: record.idleState
@@ -809,9 +812,13 @@ class AttendanceScreen extends StatelessWidget {
               ],
             ),
           ),
-          Switch(
+          Switch.adaptive(
             value: record.idleState,
-            onChanged: (_) => controller.toggleIdleState(),
+            onChanged: (_) => controller.toggleIdleState(
+              context,
+              record.idleState,
+              _buildIdealSection(controller, record),
+            ),
             activeColor: const Color(0xFFFF9800),
             inactiveThumbColor: const Color(0xFF00B894),
             inactiveTrackColor: const Color(0xFF00B894).withOpacity(0.3),
@@ -861,6 +868,188 @@ class AttendanceScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
               color: color,
               letterSpacing: -0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIdealSection(
+    AttendanceController controller,
+    AttendanceRecord record,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // --- Title Section ---
+          const Text(
+            "Idle Status",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          Form(
+            key: controller.formKey,
+            child: Column(
+              children: <Widget>[
+                // --- Switch Card ---
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Iconsax.status,
+                            size: 20,
+                            color: TColors.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            "Idle State",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Obx(
+                        () => Switch.adaptive(
+                          value: controller.isIdle.value,
+                          activeColor: Colors.green.shade600,
+                          activeTrackColor: Colors.green.shade100,
+                          onChanged: (value) => controller.isIdle.value = value,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // --- Animated Visibility for Client Project ---
+                Obx(
+                  () => AnimatedSize(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: !controller.isIdle.value
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 20),
+                              const Text(
+                                "Client Project",
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 8),
+                              CustomBottomSheetDropdown<ProjectsModel>(
+                                displayText: (project) => project.name,
+                                isLoading: RxBool(false),
+                                validator: (value) => TValidator.validateNull(
+                                  value,
+                                  "Project is required.",
+                                ),
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                label: "Select Project",
+                                items: controller.projects,
+                                selectedValue: controller.selectedProject,
+                                onSelect: (val, state) {
+                                  controller.selectedProject.value = val;
+                                  state.didChange(val);
+                                },
+                                icon: Iconsax.folder,
+                              ),
+                            ],
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // --- Action Buttons ---
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          if (controller.isLoading.value) return;
+                          controller.formKey.currentState!.reset();
+                          controller.selectedProject.value = null;
+                          Get.back();
+                        }, // Or your specific cancel logic
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 2,
+                          ),
+                          side: BorderSide(color: Colors.grey.shade300),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          "Cancel",
+                          style: TextStyle(color: Colors.black87),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Obx(
+                      () => Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (controller.isLoading.value) return;
+                            controller.updateIdleStatus(record);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: TColors.primary,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 2,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: controller.isLoading.value
+                              ? CupertinoActivityIndicator(color: TColors.white)
+                              : const Text("Update"),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+              ],
             ),
           ),
         ],
@@ -1069,7 +1258,9 @@ class AttendanceScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(
+              horizontal: TSizes.defaultPadding,
+            ),
             child: Text(
               'Attendance History',
               style: TextStyle(
@@ -1084,7 +1275,9 @@ class AttendanceScreen extends StatelessWidget {
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(
+              horizontal: TSizes.defaultPadding,
+            ),
             itemCount: controller.attendanceHistory.length,
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {

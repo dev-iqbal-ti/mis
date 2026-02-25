@@ -9,11 +9,14 @@ class AuthController extends GetxController {
   static AuthController get instance => Get.find();
 
   User? authUser;
+  RxString fullName = ''.obs;
   final isLoggedIn = false.obs;
   final GetStorage deviceStorage = GetStorage();
 
   Future<void> setAuthUser(Map<String, dynamic> user) async {
     authUser = userFromJson(jsonEncode(user));
+    fullName.value =
+        '${authUser?.userDetails.firstName} ${authUser?.userDetails.lastName}';
     await deviceStorage.write('droneesUser', user);
     isLoggedIn.value = true;
   }
@@ -34,6 +37,8 @@ class AuthController extends GetxController {
     }
     try {
       authUser = userFromJson(jsonEncode(userData));
+      fullName.value =
+          '${authUser?.userDetails.firstName} ${authUser?.userDetails.lastName}';
       isLoggedIn.value = true;
       return "User";
     } catch (e) {

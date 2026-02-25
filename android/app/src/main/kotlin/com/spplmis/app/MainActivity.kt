@@ -1,4 +1,4 @@
-package com.example.dronees
+package com.spplmis.app
 
 import io.flutter.embedding.android.FlutterActivity
 

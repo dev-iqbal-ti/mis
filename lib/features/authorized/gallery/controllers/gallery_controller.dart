@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dronees/features/authorized/gallery/models/gallery_item.dart';
+import 'package:dronees/features/authorized/gallery/screens/image_details_screen.dart';
 import 'package:dronees/utils/helpers/image_picker_helper.dart';
 import 'package:dronees/utils/http/api.dart';
 import 'package:dronees/utils/http/http_client.dart';
+import 'package:dronees/utils/logging/logger.dart';
 import 'package:dronees/utils/popups/loaders.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -19,6 +21,9 @@ class GalleryController extends GetxController {
   RxBool isLoading = false.obs;
   RxBool isLoadingMore = false.obs;
   RxBool hasMoreData = true.obs;
+
+  final Rxn<GalleryItem> selectedItem = Rxn<GalleryItem>(null);
+  RxList<GalleryItem> detailsItems = <GalleryItem>[].obs;
 
   // Pagination
   RxInt currentPage = 1.obs;
@@ -53,6 +58,12 @@ class GalleryController extends GetxController {
   void onClose() {
     scrollController.dispose();
     super.onClose();
+  }
+
+  void navigateToImageDetails(List<GalleryItem> items, GalleryItem item) {
+    selectedItem.value = item;
+    detailsItems.value = items;
+    Get.to(() => ImageDetailScreen());
   }
 
   Future<void> fetchGalleryItems({bool isRefresh = false}) async {
@@ -193,6 +204,51 @@ class GalleryController extends GetxController {
     }
   }
 
+  Future<void> deleteImage(int id) async {
+    final response = await THttpHelper.deleteRequest(
+      API.deleteApis.deleteImage(id),
+    );
+
+    if (response == null) {
+      return;
+    }
+    TLoggerHelper.customPrint(response.toString());
+    if (response["success"] == true) {
+      // remove image from the list and select next eitheir from left or right and if no image left go back.
+      // Find index of current item
+      final index = detailsItems.indexWhere((item) => item.id == id);
+
+      if (index != -1) {
+        // Remove the item
+        detailsItems.removeAt(index);
+
+        if (detailsItems.isNotEmpty) {
+          // Prefer selecting next (right side)
+          final newIndex = index < detailsItems.length
+              ? index
+              : detailsItems.length - 1;
+
+          selectedItem.value = detailsItems[newIndex];
+        } else {
+          // No items left → go back
+          Get.back();
+        }
+      }
+
+      // Remove from master list
+      allItems.removeWhere((item) => item.id == id);
+
+      // Regroup
+      groupedItems.value = groupItemsByDate(allItems);
+
+      // Get.back();
+      TLoaders.successSnackBar(
+        title: "Success",
+        message: "Image Deleted Successfully",
+      );
+    }
+  }
+
   Future<void> pickDocument() async {
     final source = await Get.bottomSheet<ImageSource>(
       Container(
@@ -209,9 +265,13 @@ class GalleryController extends GetxController {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
-
-            sourceTile(Icons.camera_alt, "Camera", ImageSource.camera),
-            sourceTile(Icons.photo_library, "Gallery", ImageSource.gallery),
+            Row(
+              children: <Widget>[
+                sourceTile(Icons.camera_alt, "Camera", ImageSource.camera),
+                const SizedBox(width: 16),
+                sourceTile(Icons.photo_library, "Gallery", ImageSource.gallery),
+              ],
+            ),
             const SizedBox(height: 10),
           ],
         ),
@@ -228,15 +288,59 @@ class GalleryController extends GetxController {
   }
 
   Widget sourceTile(IconData icon, String title, ImageSource source) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: const Color(0xFFF1EFFF),
-        child: Icon(icon, color: const Color(0xFF6C5CE7)),
+    return Expanded(
+      child: InkWell(
+        onTap: () => Get.back(result: source),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFF1EFFF), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6C5CE7).withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: const Color(0xFFF1EFFF),
+                child: Icon(icon, color: const Color(0xFF6C5CE7), size: 30),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Color(0xFF2D3436),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      onTap: () {
-        Get.back(result: source);
-      },
+    );
+  }
+
+  // How to call it in your BottomSheet/Dialog:
+  Widget buildSourcePicker() {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Row(
+        children: [
+          sourceTile(Icons.camera_alt_outlined, "Camera", ImageSource.camera),
+          const SizedBox(width: 16), // Space between buttons
+          sourceTile(Icons.image_outlined, "Gallery", ImageSource.gallery),
+        ],
+      ),
     );
   }
 }

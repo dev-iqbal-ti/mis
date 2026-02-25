@@ -1,30 +1,38 @@
 import 'package:dronees/features/authorized/leave/controllers/leave_calender_controller.dart';
-import 'package:dronees/features/authorized/leave/controllers/leave_controller.dart';
+import 'package:dronees/features/authorized/leave/controllers/submit_leave_controller.dart';
+import 'package:dronees/features/authorized/leave/models/leave_category.dart';
+
 import 'package:dronees/features/authorized/leave/widgets/custon_leave_calender.dart';
+import 'package:dronees/features/authorized/leave/widgets/compoff_dropdown.dart';
 
 import 'package:dronees/utils/constants/colors.dart';
 import 'package:dronees/utils/constants/image_strings.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:dronees/utils/constants/text_strings.dart';
+import 'package:dronees/utils/logging/logger.dart';
 import 'package:dronees/utils/validators/validation.dart';
 import 'package:dronees/widgets/custom_bottom_sheet_dropdown.dart';
 import 'package:dronees/widgets/submit_confirmation.dart';
 import 'package:ephone_field/ephone_field.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 class SubmitLeaveScreen extends StatelessWidget {
   SubmitLeaveScreen({super.key});
 
-  final LeaveController controller = Get.find<LeaveController>();
+  final SubmitLeaveController controller = Get.put<SubmitLeaveController>(
+    SubmitLeaveController(),
+  );
 
   // Put calendar controller with permanent flag to prevent disposal
   final calendarController = Get.put(LeaveCalendarController());
 
   @override
   Widget build(BuildContext context) {
+    TLoggerHelper.customPrint(
+      controller.selectedCategory.value?.name == 'Floating Holiday',
+    );
     return Scaffold(
       backgroundColor: TColors.lightGrayBackground,
       appBar: AppBar(
@@ -82,25 +90,18 @@ class SubmitLeaveScreen extends StatelessWidget {
 
                     _buildFieldLabel("Leave Category"),
                     const SizedBox(height: 6),
-                    CustomBottomSheetDropdown<String>(
-                      displayText: (reason) => reason,
+                    CustomBottomSheetDropdown<LeaveCategory>(
+                      displayText: (reason) => reason.name,
                       isLoading: RxBool(false),
                       label: "Choose a Leave Category",
-                      items: const [
-                        "Casual Leave",
-                        "Comp Off",
-                        "Earned Leave",
-                        "Floating Holiday",
-                        "LWP",
-                        "WFH",
-                      ],
+                      items: controller.leaveCategory,
                       icon: Iconsax.keyboard_open,
-                      selectedValue: controller.selectedValue,
-                      onSelect: (value) {
-                        controller.updateValue(value);
-                        print("Selected: $value");
-                      },
-                      validator: TValidator.leaveCategoryValidator,
+                      selectedValue: controller.selectedCategory,
+                      onSelect: controller.selectCategory,
+                      validator: (value) => TValidator.validateNull(
+                        value,
+                        "Leave category is required.",
+                      ),
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                     ),
                     const SizedBox(height: TSizes.defaultPadding),
@@ -153,45 +154,81 @@ class SubmitLeaveScreen extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          CustomLeaveCalendar(controller: calendarController),
+                          Obx(
+                            () => CustomLeaveCalendar(
+                              controller: calendarController,
+                              holidays: controller.holidays,
+                              floatingHolidays: controller.floatingHolidays,
+                              isSelectedFloating:
+                                  controller.selectedCategory.value?.name ==
+                                  'Floating Holiday',
+                              allowMultipleSelection:
+                                  controller.selectedCategory.value?.name !=
+                                      'Floating Holiday' &&
+                                  controller.selectedCategory.value?.name !=
+                                      'Comp Off',
+                            ),
+                          ),
                         ],
                       ),
                     ),
 
+                    Obx(() {
+                      if (controller.selectedCategory.value?.name ==
+                          'Comp Off') {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: TSizes.defaultPadding),
+                            _buildFieldLabel("Select Floating Holiday"),
+                            const SizedBox(height: 6),
+                            CompOffDropdown(
+                              compOffs: controller.compOffList,
+                              selectedCompOff: controller.selectedCompOff,
+                              isLoading: controller.isLoadingHolidays.value,
+                              onSelect: (h) =>
+                                  controller.selectedCompOff.value = h,
+                              validator: (v) =>
+                                  v == null ? 'Please select a holiday.' : null,
+                            ),
+                          ],
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }),
                     const SizedBox(height: TSizes.defaultPadding),
 
-                    _buildFieldLabel("Emergency Contact During Leave Period"),
-                    const SizedBox(height: 8),
-                    EPhoneField(
-                      onChanged: (phone) {
-                        controller.emergencyContact.value = phone;
-                      },
-                      phoneValidator: TValidator.validatePhoneNumber,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      initialType: EphoneFieldType.phone,
-                      initialCountry: Country.india,
-                      countries: [Country.india],
-                      decoration: InputDecoration(
-                        hintText: "Employee",
-                        prefixIcon: Icon(Iconsax.user),
-                        iconColor: TColors.primary,
-                        prefixIconColor: TColors.primary,
-                        filled: true,
-                        fillColor: const Color(0xFFF8F9FA),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: const Color(0xFFE8E8E8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: TSizes.defaultPadding),
-
+                    // _buildFieldLabel("Emergency Contact During Leave Period"),
+                    // const SizedBox(height: 8),
+                    // EPhoneField(
+                    //   onChanged: (phone) {
+                    //     controller.emergencyContact.value = phone;
+                    //   },
+                    //   phoneValidator: TValidator.validatePhoneNumber,
+                    //   autovalidateMode: AutovalidateMode.onUserInteraction,
+                    //   initialType: EphoneFieldType.phone,
+                    //   initialCountry: Country.india,
+                    //   countries: [Country.india],
+                    //   decoration: InputDecoration(
+                    //     hintText: "Employee",
+                    //     prefixIcon: Icon(Iconsax.user),
+                    //     iconColor: TColors.primary,
+                    //     prefixIconColor: TColors.primary,
+                    //     filled: true,
+                    //     fillColor: const Color(0xFFF8F9FA),
+                    //     border: OutlineInputBorder(
+                    //       borderRadius: BorderRadius.circular(12),
+                    //       borderSide: BorderSide.none,
+                    //     ),
+                    //     enabledBorder: OutlineInputBorder(
+                    //       borderRadius: BorderRadius.circular(12),
+                    //       borderSide: BorderSide(
+                    //         color: const Color(0xFFE8E8E8),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
+                    // const SizedBox(height: TSizes.defaultPadding),
                     _buildFieldLabel("Leave Purpose"),
                     const SizedBox(height: 6),
                     TextFormField(
@@ -245,7 +282,10 @@ class SubmitLeaveScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSubmitButton(BuildContext context, LeaveController controller) {
+  Widget _buildSubmitButton(
+    BuildContext context,
+    SubmitLeaveController controller,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       child: ElevatedButton(
@@ -258,7 +298,7 @@ class SubmitLeaveScreen extends StatelessWidget {
               subtitle: TTexts.doubleCheckLeave,
               confirmButtonText: TTexts.yesSubmit,
               cancelButtonText: TTexts.noLetme,
-              onConfirm: controller.submitLeave,
+              onConfirm: () => controller.submitLeave(calendarController),
             );
           }
         },

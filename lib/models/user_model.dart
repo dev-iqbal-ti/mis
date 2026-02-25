@@ -49,22 +49,12 @@ class UserDetails {
   String contactNo;
   String emergencyContactNo;
   String currentAddress;
-  int isSameAddress;
   String permanentAddress;
-  int genderId;
-  int bloodgroupId;
-  int maritalstatusId;
   DateTime dateOfBirth;
-  String aadhaarNo;
-  String panNo;
-  String prranNo;
-  String uanNo;
-  int empstatusId;
-  String profileCompletionStatus;
   DateTime createdAt;
   DateTime updatedAt;
-  dynamic createdBy;
   int employerId;
+  int workLocationId;
   String orgEmailId;
   dynamic profilePic;
   final String rolesDisplayNames;
@@ -80,21 +70,14 @@ class UserDetails {
     required this.contactNo,
     required this.emergencyContactNo,
     required this.currentAddress,
-    required this.isSameAddress,
+    required this.workLocationId,
     required this.permanentAddress,
-    required this.genderId,
-    required this.bloodgroupId,
-    required this.maritalstatusId,
+
     required this.dateOfBirth,
-    required this.aadhaarNo,
-    required this.panNo,
-    required this.prranNo,
-    required this.uanNo,
-    required this.empstatusId,
-    required this.profileCompletionStatus,
+
     required this.createdAt,
     required this.updatedAt,
-    required this.createdBy,
+
     required this.employerId,
     required this.orgEmailId,
     required this.profilePic,
@@ -112,21 +95,14 @@ class UserDetails {
     contactNo: json["contact_no"],
     emergencyContactNo: json["emergency_contact_no"],
     currentAddress: json["current_address"],
-    isSameAddress: json["is_same_address"],
+
     permanentAddress: json["permanent_address"],
-    genderId: json["gender_id"],
-    bloodgroupId: json["bloodgroup_id"],
-    maritalstatusId: json["maritalstatus_id"],
+    workLocationId: json["work_location_id"],
     dateOfBirth: DateTime.parse(json["date_of_birth"]),
-    aadhaarNo: json["aadhaar_no"],
-    panNo: json["pan_no"],
-    prranNo: json["prran_no"],
-    uanNo: json["uan_no"],
-    empstatusId: json["empstatus_id"],
-    profileCompletionStatus: json["profile_completion_status"],
+
     createdAt: DateTime.parse(json["created_at"]),
     updatedAt: DateTime.parse(json["updated_at"]),
-    createdBy: json["created_by"],
+
     employerId: json["employer_id"],
     orgEmailId: json["org_email_id"],
     profilePic: json["profile_pic"],
@@ -144,21 +120,11 @@ class UserDetails {
     "contact_no": contactNo,
     "emergency_contact_no": emergencyContactNo,
     "current_address": currentAddress,
-    "is_same_address": isSameAddress,
+    "work_location_id": workLocationId,
     "permanent_address": permanentAddress,
-    "gender_id": genderId,
-    "bloodgroup_id": bloodgroupId,
-    "maritalstatus_id": maritalstatusId,
     "date_of_birth": dateOfBirth.toIso8601String(),
-    "aadhaar_no": aadhaarNo,
-    "pan_no": panNo,
-    "prran_no": prranNo,
-    "uan_no": uanNo,
-    "empstatus_id": empstatusId,
-    "profile_completion_status": profileCompletionStatus,
     "created_at": createdAt.toIso8601String(),
     "updated_at": updatedAt.toIso8601String(),
-    "created_by": createdBy,
     "employer_id": employerId,
     "org_email_id": orgEmailId,
     "profile_pic": profilePic,

@@ -1,9 +1,10 @@
 import 'package:dronees/features/authorized/attendance/controllers/attendance_controller.dart';
+import 'package:dronees/features/authorized/attendance/controllers/attendance_mark_controller.dart';
 import 'package:flutter/Material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-Widget attendanceMap(AttendanceController controller) {
+Widget attendanceMap(AttendanceMarkController controller) {
   return Obx(() {
     if (controller.currentPosition.value == null) {
       return const Center(child: CircularProgressIndicator());

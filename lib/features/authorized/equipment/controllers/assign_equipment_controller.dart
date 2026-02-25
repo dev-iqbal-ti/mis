@@ -9,6 +9,8 @@ import 'package:dronees/features/authorized/equipment/screens/assign_equipment_s
 import 'package:dronees/utils/helpers/image_picker_helper.dart';
 import 'package:dronees/utils/http/api.dart';
 import 'package:dronees/utils/http/http_client.dart';
+import 'package:dronees/widgets/custom_alert_sheet.dart';
+import 'package:dronees/widgets/custom_blur_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -39,12 +41,30 @@ class AssignEquipmentController extends GetxController {
   void _fetchEquipment() async {
     final response = await THttpHelper.getRequest(API.getApis.getEquipments);
     if (response == null) return;
-    equipmentList.value = equipmentModelFromJson(json.encode(response["data"]));
+    final data = equipmentModelFromJson(json.encode(response["data"]));
+    if (data.isEmpty) {
+      CustomBlurBottomSheet.show(
+        Get.context!,
+        widget: CustomAlertSheet(
+          title: "No equipments found",
+          message:
+              "No equipments found. Please Contact Admin to add an equipment.",
+          buttonText: "Go Back",
+          onAction: () {
+            Get.back();
+            Get.back();
+          },
+        ),
+        isDismissible: false,
+        enaleDrag: false,
+      );
+    }
+    equipmentList.value = data;
   }
 
   Future<void> pickImage(FormFieldState<File> field) async {
     final file = await ImageUploadService.pickImageFromSource(
-      ImageSource.gallery,
+      ImageSource.camera,
     );
 
     if (file != null) {

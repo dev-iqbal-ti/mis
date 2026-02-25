@@ -1,11 +1,12 @@
 import 'package:dronees/features/authorized/leave/controllers/leave_controller.dart';
+import 'package:dronees/features/authorized/leave/controllers/submit_leave_controller.dart';
 import 'package:dronees/features/authorized/leave/models/leave_duration.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class LeaveDurationPicker extends StatelessWidget {
-  final LeaveController controller;
+  final SubmitLeaveController controller;
 
   const LeaveDurationPicker({super.key, required this.controller});
 
