@@ -6,6 +6,7 @@ import 'package:camera/camera.dart';
 import 'package:dronees/controllers/auth_controller.dart';
 import 'package:dronees/features/authorized/attendance/controllers/attendance_controller.dart';
 import 'package:dronees/features/authorized/attendance/models/attendance_record.dart';
+import 'package:dronees/features/authorized/home/controllers/home_controller.dart';
 import 'package:dronees/features/authorized/money_receive/models/projects_model.dart';
 import 'package:dronees/models/vehicle.dart';
 import 'package:dronees/utils/helpers/add_water_mark.dart';
@@ -200,7 +201,7 @@ class AttendanceMarkController extends GetxController {
 
       await _getAttendanceById(response["data"]["insertId"]);
       isLoading.value = false;
-
+      HomeController.to.isCheckedIn.value = true;
       Get.back();
     } catch (e) {
       log(e.toString());

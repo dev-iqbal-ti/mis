@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:dio/dio.dart';
 import 'package:dronees/features/authorized/gallery/models/gallery_item.dart';
 import 'package:dronees/features/authorized/gallery/screens/image_details_screen.dart';
+import 'package:dronees/features/authorized/home/controllers/home_controller.dart';
 import 'package:dronees/utils/helpers/image_picker_helper.dart';
 import 'package:dronees/utils/http/api.dart';
 import 'package:dronees/utils/http/http_client.dart';
@@ -63,7 +63,16 @@ class GalleryController extends GetxController {
   void navigateToImageDetails(List<GalleryItem> items, GalleryItem item) {
     selectedItem.value = item;
     detailsItems.value = items;
-    Get.to(() => ImageDetailScreen());
+    Get.to(
+      () => ImageDetailScreen(
+        selectedItem: selectedItem,
+        detailsItems: detailsItems,
+        onConformDelete: (int p1) {
+          deleteImage(p1);
+        },
+        showHero: true,
+      ),
+    );
   }
 
   Future<void> fetchGalleryItems({bool isRefresh = false}) async {
@@ -235,6 +244,8 @@ class GalleryController extends GetxController {
         }
       }
 
+      HomeController.to.removeImageAtIndex(id);
+
       // Remove from master list
       allItems.removeWhere((item) => item.id == id);
 
@@ -246,6 +257,20 @@ class GalleryController extends GetxController {
         title: "Success",
         message: "Image Deleted Successfully",
       );
+    }
+  }
+
+  void removeImageAtIndex(int id) {
+    TLoggerHelper.customPrint("removeImageAtIndex $id");
+    final index = allItems.indexWhere((item) => item.id == id);
+    TLoggerHelper.customPrint("removeImageAtIndex $index");
+
+    if (index != -1) {
+      // Remove the item
+      allItems.removeAt(index);
+      // allItems.refresh();
+      groupedItems.value = groupItemsByDate(allItems);
+      groupedItems.refresh();
     }
   }
 

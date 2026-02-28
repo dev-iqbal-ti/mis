@@ -23,6 +23,7 @@ class GetApis {
   String getLeave(int userId) => "/leave/applications/$userId";
   final String getAnalytics = "/attendance/punch-analytics";
   final String getVehicles = "/attendance/vehicle";
+  final String initializeApp = "/attendance/app-initialize";
   final String getTravelAllowance = "/travel/my";
   final String getTravelAllowanceStats = "/travel/stats";
   final String getTravelAllowanceReportList = "/travel/list";

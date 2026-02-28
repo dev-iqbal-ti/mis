@@ -3,13 +3,13 @@ import 'package:dronees/controllers/auth_controller.dart';
 import 'package:dronees/features/authorized/attendance/controllers/attendance_controller.dart';
 import 'package:dronees/features/authorized/attendance/models/attendance_record.dart';
 import 'package:dronees/features/authorized/attendance/screens/attendance_mark_screen.dart';
+import 'package:dronees/features/authorized/attendance/widgets/attendance_declaration_widget.dart';
 import 'package:dronees/features/authorized/attendance/widgets/info_card.dart';
 import 'package:dronees/features/authorized/attendance/widgets/show_attendance_detail.dart';
 import 'package:dronees/features/authorized/money_receive/models/projects_model.dart';
 import 'package:dronees/utils/constants/colors.dart';
 import 'package:dronees/utils/constants/sizes.dart';
 import 'package:dronees/utils/constants/text_strings.dart';
-import 'package:dronees/utils/logging/logger.dart';
 import 'package:dronees/utils/validators/validation.dart';
 import 'package:dronees/widgets/custom_blur_bottom_sheet.dart';
 import 'package:dronees/widgets/custom_bottom_sheet_dropdown.dart';
@@ -1080,7 +1080,18 @@ class AttendanceScreen extends StatelessWidget {
               ? null
               : () {
                   if (current == null) {
-                    Get.to(() => AttendanceMarkScreen());
+                    CustomBlurBottomSheet.show(
+                      context,
+                      widget: AttendanceDeclarationWidget(
+                        onAgree: () {
+                          Get.back();
+                          Get.to(() => AttendanceMarkScreen());
+                        },
+                      ),
+                      isDismissible: false,
+                      enaleDrag: false,
+                    );
+                    // Get.to(() => AttendanceMarkScreen());
                   } else if (current.isActive) {
                     SubmitConfirmationSheet.show(
                       context,

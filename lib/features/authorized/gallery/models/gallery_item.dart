@@ -15,7 +15,7 @@ class GalleryItem {
   final String imageUrl;
   final String thumbnailUrl;
   final DateTime createdAt;
-  final String name;
+  final String? name;
 
   GalleryItem({
     required this.id,

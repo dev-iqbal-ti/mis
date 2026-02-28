@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:dronees/controllers/auth_controller.dart';
+import 'package:dronees/features/authorized/home/controllers/home_controller.dart';
 import 'package:dronees/features/authorized/money_receive/models/projects_model.dart';
 
 import 'package:dronees/utils/http/api.dart';
@@ -169,6 +170,7 @@ class AttendanceController extends GetxController {
     if (todayRecord.isNotEmpty) {
       loadData(todayRecord.first);
       attendanceHistory.removeAt(0);
+      HomeController.to.isCheckedIn.value = true;
     }
   }
 

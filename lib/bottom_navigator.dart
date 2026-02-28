@@ -237,6 +237,7 @@ class BottomNavigator extends StatelessWidget {
 }
 
 class NavigationController extends GetxController {
+  static NavigationController get to => Get.find();
   var selectedIndex = 0.obs;
 
   // Track which tabs have been visited

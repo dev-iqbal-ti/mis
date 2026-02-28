@@ -13,11 +13,16 @@ class AuthController extends GetxController {
   final isLoggedIn = false.obs;
   final GetStorage deviceStorage = GetStorage();
 
-  Future<void> setAuthUser(Map<String, dynamic> user) async {
+  Future<void> setAuthUser(
+    Map<String, dynamic> user, {
+    bool remember = true,
+  }) async {
     authUser = userFromJson(jsonEncode(user));
     fullName.value =
         '${authUser?.userDetails.firstName} ${authUser?.userDetails.lastName}';
-    await deviceStorage.write('droneesUser', user);
+    if (remember) {
+      await deviceStorage.write('droneesUser', user);
+    }
     isLoggedIn.value = true;
   }
 

@@ -12,15 +12,16 @@ class LoginController extends GetxController {
   static LoginController get instance => Get.find();
   final formKey = GlobalKey<FormState>();
 
-  final emailController = TextEditingController(
-    text: "iqbal.khan786@gmail.com",
-  );
-  final passwordController = TextEditingController(text: "Password@123");
+  // final emailController = TextEditingController(
+  //   text: "iqbal.khan786@gmail.com",
+  // );
+  // final passwordController = TextEditingController(text: "Password@123");
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
   RxBool obscure = RxBool(true);
   RxBool remember = RxBool(true);
 
   // Role selection
-  var selectedRole = 'pilot'.obs;
   RxBool showPassword = RxBool(false);
 
   // Loading state
@@ -44,13 +45,14 @@ class LoginController extends GetxController {
         "platform": "mobile",
       };
 
-      log(user.toString());
-      // await Future.delayed(const Duration(seconds: 2));
       final response = await THttpHelper.postRequest(API.postApis.login, user);
 
       if (response == null) return;
 
-      await AuthController.instance.setAuthUser(response);
+      await AuthController.instance.setAuthUser(
+        response,
+        remember: remember.value,
+      );
       Get.offAll(() => BottomNavigator());
     } catch (e) {
       Get.snackbar('Error', 'Error: $e', snackPosition: SnackPosition.BOTTOM);
@@ -59,46 +61,10 @@ class LoginController extends GetxController {
     }
   }
 
-  void goToRegister() {
-    // Replace the current screen with the Register screen
-    Get.offNamed('/register');
-  }
-
   @override
   void onClose() {
     emailController.dispose();
     passwordController.dispose();
     super.onClose();
-  }
-
-  Future<void> signIn() async {
-    final form = formKey.currentState;
-
-    if (form == null || !form.validate()) {
-      debugPrint('❌ Validation failed');
-      return;
-    }
-
-    isLoading.value = true;
-
-    try {
-      // final response = await AuthService.loginUser(
-      //   emailOrPhone: emailController.text.trim(),
-      //   password: passwordController.text.trim(),
-      //   role: selectedRole.value,
-      // );
-
-      // Get.snackbar(
-      //   'success',
-      //   'Welcome back ${response['name']}!',
-      //   snackPosition: SnackPosition.TOP,
-      // );
-
-      // Get.offAllNamed(AppRoutes.HOME);
-    } catch (e) {
-      Get.snackbar('Error', 'Error: $e', snackPosition: SnackPosition.BOTTOM);
-    } finally {
-      isLoading.value = false;
-    }
   }
 }

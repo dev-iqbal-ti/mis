@@ -1,7 +1,6 @@
 import 'package:dronees/bottom_navigator.dart';
 import 'package:dronees/controllers/auth_controller.dart';
 import 'package:dronees/features/unauthorized/screens/onboarding_screen.dart';
-import 'package:dronees/routes/appRoute.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';

@@ -61,7 +61,7 @@ class ImageUploadService {
   static Future<Object?> takePhoto({xFile = false}) async {
     try {
       final XFile? photo = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
+        source: ImageSource.camera,
         imageQuality: 80,
         maxWidth: 1200,
         maxHeight: 1200,
